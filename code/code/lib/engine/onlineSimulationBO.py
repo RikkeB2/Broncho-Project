@@ -192,11 +192,11 @@ class onlineSimulationWithNetwork(object):
 
         # Smoothing trajectory
         self.originalCenterlineArray = centerlineArray
-        centerlineArray_smoothed = np.zeros_like(centerlineArray) 
-        for i in range(len(centerlineArray)): 
+        centerlineArray_smoothed = np.zeros_like(centerlineArray)
+        for i in range(len(centerlineArray)):
             left_bound = i - 10
-            right_bound = i + 10 
-            if left_bound < 0: left_bound = 0 
+            right_bound = i + 10
+            if left_bound < 0: left_bound = 0
             if right_bound > len(centerlineArray): right_bound = len(centerlineArray)
             centerlineArray_smoothed[i] = np.mean(centerlineArray[left_bound : right_bound], axis=0)
         self.centerlineArray = centerlineArray_smoothed
@@ -395,6 +395,8 @@ class onlineSimulationWithNetwork(object):
 
     def get_imagesPRY(self, yaw, pitch, roll, t, pos_vector):
         rgb_img_bullet, _, _ = self.camera.lookatBO(yaw, pitch, roll, t, -pos_vector) # for visulization (a camara esta rodada em relacao ao mundo Z=Y, Y = -Z)
+        #if isinstance(rgb_img_bullet, tuple):
+            #rgb_img_bullet = np.array(rgb_img_bullet)
         rgb_img_bullet = rgb_img_bullet[:, :, :3]
         rgb_img_bullet = cv2.resize(rgb_img_bullet, (200, 200))
         rgb_img_bullet = np.transpose(rgb_img_bullet, axes=(2, 0, 1))
@@ -559,9 +561,8 @@ class onlineSimulationWithNetwork(object):
             R_currentCam = p.getMatrixFromQuaternion(quatCam)
             R_currentCam = np.reshape(R_currentCam, (3, 3))
             
-            # Implementar IK de acordo com os inputs dados   
-            # previous 0.005      
-            t =  t + np.dot(R_currentCam, [0, 0,  -direction[2] * 0.008])  # andar em Z na direcao da camara; OBS: o eixo da camara esta rodado em relacao ao mundo
+            # Implementar IK de acordo com os inputs dados        
+            t =  t + np.dot(R_currentCam, [0, 0,  -direction[2] * 0.005])  # andar em Z na direcao da camara; OBS: o eixo da camara esta rodado em relacao ao mundo
 
             #quat_step = p.getQuaternionFromEuler([np.radians(direction[1]), 0, np.radians(direction[0])]) # pitch 0 yaw
             quat_step = p.getQuaternionFromEuler([np.radians(direction[1]), np.radians(direction[0]), 0]) # pitch roll 0

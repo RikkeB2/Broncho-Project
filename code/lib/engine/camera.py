@@ -1,16 +1,6 @@
 import pybullet as p
 import numpy as np
 
-# --------------------------- Overall purpose ----------------------------------
-# Defines classes for handling virtual cameras within the PyBullet physics engine
-# Provides functionality to set up camera parameters (position, orientation, field of view)
-# and to capture images from the camera, and calculate intrinsic camera parameters
-# ------------------------------------------------------------------------------
-
-
-# Function to set up a camera in PyBullet and capture an image
-# Input: RPY (bool) - whether to use roll, pitch, yaw angles to define camera orientation
-
 def setCameraPicAndGetPic(RPY = True,
                         cameraEyePosition=[0, 1, 1], cameraUpVector=[0,-1,0],
                         distance=0.5, yaw=0, pitch=-30, roll = 0, upAxisIndex = 2, 
@@ -19,18 +9,18 @@ def setCameraPicAndGetPic(RPY = True,
     """
 
     """
-    #basePos, baseOrientation = p.getBasePositionAndOrientation(robot_id, physicsClientId=physicsClientId)  # Get the position and orientation of the robot base
-    #matrix = p.getMatrixFromQuaternion(baseOrientation, physicsClientId=physicsClientId)                   # Get the rotation matrix from the orientation
+    # basePos, baseOrientation = p.getBasePositionAndOrientation(robot_id, physicsClientId=physicsClientId)
+    matrix = p.getMatrixFromQuaternion(baseOrientation, physicsClientId=physicsClientId)
 
-    #basePos = np.array(basePos)
-    #cameraPos = basePos + BASE_RADIUS * tx_vec + 0.5 * BASE_THICKNESS * tz_vec
-    #targetPos = cameraPos + 1 * tx_vec
+    # basePos = np.array(basePos)
+    # cameraPos = basePos + BASE_RADIUS * tx_vec + 0.5 * BASE_THICKNESS * tz_vec
+    targetPos = cameraPos + 1 * tx_vec
 
     viewMatrix = p.computeViewMatrix(
-        cameraEyePosition=cameraPos,                # Camera position
-        cameraTargetPosition=targetPos,             # Camera target position
-        cameraUpVector=tz_vec,                      # Camera up vector
-        physicsClientId=physicsClientId             # Physics client ID
+        cameraEyePosition=cameraPos,
+        cameraTargetPosition=targetPos,
+        cameraUpVector=tz_vec,
+        physicsClientId=physicsClientId
     )
     projectionMatrix = p.computeProjectionMatrixFOV(
         fov=50.0,               

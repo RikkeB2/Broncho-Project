@@ -1,6 +1,14 @@
 
 import pybullet as p
 
+# ------------------------- Overall --------------------------------
+# This code defines functions for handling keyboard input
+# It's deisgned to translate keypresses into changes in the camera's position
+# There is the option of two different input schemes: one using standard
+# alphanumeric keys, and another using special characters.
+# ------------------------------------------------------------------
+
+# Function handles keyboard input for controlling yaw, pitch and translation (std)
 def getAddition(keys, scale):
 
     yaw_add = 0
@@ -9,6 +17,7 @@ def getAddition(keys, scale):
     y_add = 0
     z_add = 0
 
+    # Creates two dictionaries to map key to their corresponding actions
     botton_add_dict = {"d" : yaw_add,
                         "r" : pitch_add,  
                         "k" : x_add,
@@ -20,6 +29,7 @@ def getAddition(keys, scale):
                             "l" : y_add,
                             "j" : z_add}
     
+    # Checks if the key is in the dictionary and if it was triggered, is down or released
     for botton in botton_add_dict.keys():
         if ord(botton) in keys and keys[ord(botton)] & p.KEY_WAS_TRIGGERED:
             botton_add_dict[botton] += 1
@@ -42,6 +52,9 @@ def getAddition(keys, scale):
             botton_minus_dict[botton] -= 1
             # print("{} KEY_WAS_RELEASED".format(botton))
 
+    # After checking all keys, it calculates the final additions for yaw, pitch, x, y and z
+    # based on the values in the dictionaries. It also multiplies the z value by the scale
+    # to control speed of movement.
     yaw_add = botton_add_dict["d"] + botton_minus_dict["f"]
     pitch_add = botton_add_dict["r"] + botton_minus_dict["e"]
     x_add = (botton_add_dict["k"] + botton_minus_dict["h"]) * scale
@@ -51,6 +64,7 @@ def getAddition(keys, scale):
     return yaw_add, pitch_add, x_add, y_add, z_add
 
 
+# Similar to the previous function, but for the special characters input scheme
 def getAdditionPlain(keys, scale):
 
     yaw_add = 0
@@ -163,8 +177,10 @@ def getAdditionPlain(keys, scale):
     return yaw_add, pitch_add, x_add, y_add, z_add
 
 
+# Function handles keyboard inputs, designed to return a direction vector based on pressed key
 def getDirectionBO(keys):
 
+    # Direction mapping
     botton_direction = {"＝" : [1, 0, 0, 0, 0, 0],
                         "／" : [0, 1, 0, 0, 0, 0],  
                         "０" : [0, 0, 1, 0, 0, 0],
@@ -172,6 +188,7 @@ def getDirectionBO(keys):
                         "２" : [0, 0, 0, 0, 1, 0],
                         "：" : [0, 0, 0, 0, 0, 1]} #enter (65309), #left(65295), right(65296), top(65297), bottom(65298), shift(65305)
     
+    # Key press detection
     for botton in botton_direction.keys():
         if ord(botton) in keys and keys[ord(botton)] & p.KEY_WAS_TRIGGERED:
             print("{} KEY_WAS_TRIGGERED".format(botton))
@@ -185,7 +202,7 @@ def getDirectionBO(keys):
     
     return [0, 0, 0, 0, 0, 0]
 
-
+# Similar to getAddition, but uses special characters to control yaw, pitch and z-translation
 def getAdditionBO(keys, scale):
 
     yaw_add = 0
@@ -199,6 +216,7 @@ def getAdditionBO(keys, scale):
                             "２" : pitch_add,
                             "：" : z_add}
     
+    # Key press detection
     for botton in botton_add_dict.keys():
         if ord(botton) in keys and keys[ord(botton)] & p.KEY_WAS_TRIGGERED:
             botton_add_dict[botton] += 1
@@ -221,20 +239,23 @@ def getAdditionBO(keys, scale):
             botton_minus_dict[botton] -= 1
             # print("{} KEY_WAS_RELEASED".format(botton))
 
+    # Same principle as above
     yaw_add = botton_add_dict["／"] + botton_minus_dict["０"]
     pitch_add = botton_add_dict["１"] + botton_minus_dict["２"]
     z_add = (botton_add_dict["＝"] + botton_minus_dict["："]) * scale
     
     return yaw_add, pitch_add, z_add
 
-
+# Similar to getDirectionBO, but for the standard alphanumeric input scheme
 def getDirection(keys):
 
+    # Direction mapping
     botton_direction = {"u" : [1, 0, 0, 0, 0],
                         "h" : [0, 1, 0, 0, 0],  
                         "j" : [0, 0, 1, 0, 0],
                         "k" : [0, 0, 0, 1, 0]}
     
+    # Key press detection
     for botton in botton_direction.keys():
         if ord(botton) in keys and keys[ord(botton)] & p.KEY_WAS_TRIGGERED:
             print("{} KEY_WAS_TRIGGERED".format(botton))

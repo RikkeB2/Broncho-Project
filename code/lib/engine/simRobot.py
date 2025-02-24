@@ -27,10 +27,10 @@ class BroncoRobot1(object):
 
         #Working (arc length from current position to the desired one) Normalize between [0 : 1], 1 corrspondes to a angle diff of 90 in the limit of the image (pi/2 * raio(100 pixels))
         m_jointsVelRel[1] = (np.arcsin((imgTarget[0] - m_middleImage[0])/(np.linalg.norm(imgTarget[:-1] - m_middleImage))) * np.linalg.norm(imgTarget[:-1] - m_middleImage)) \
-        / (np.pi / 2 * 100) # calcula o perimetro que falta percorrer para alinhar com o eixo. quanto menor o perimetro, menor a velocidade
+        / (np.pi / 2 * 100) # Calculate the perimeter that remains to be covered to align with the acis. The smaller the perimeter, the lower the speed
 
 
-        # Nao esta a entrar aqui
+        # You are not entering here
         if((imgTarget[0] <= 0 and imgTarget[1] >= 0) or \
             (imgTarget[0] > 0 and imgTarget[1] < 0)):
             m_jointsVelRel[1] = - (m_jointsVelRel[1])
@@ -63,7 +63,7 @@ class BroncoRobot1(object):
         # Theta 1 - the rotation of the bronchoscope
         # if the next joint passes a limit, the robot rotate around to get the desired value to the joint
         if(np.abs(m_nextJoints[1]) > np.radians(self.joint_limits[1])):
-            m_nextJoints[2] = m_currJoints[2] # nao rodar a junta2, apenas roda a 3 para sair do limite de junta
+            m_nextJoints[2] = m_currJoints[2] # Don't turn joint 2, just turn 3 to leave the joint limit
 
             if(m_nextJoints[1] > np.radians(self.joint_limits[1])):
                 m_nextJoints[1] = np.minimum(np.maximum(m_currJoints[1] + (- np.radians(180) + (m_jointsVelRel[1] * self.vel_limits[1])), np.radians(-self.joint_limits[1])), np.radians(self.joint_limits[1]))
@@ -74,7 +74,7 @@ class BroncoRobot1(object):
         else:
             # Theta 2 - rotate the theta 1 do change the direction of movement of theta 2
             if(np.abs(m_nextJoints[2]) > np.radians(self.joint_limits[2])):
-                m_nextJoints[2] = m_currJoints[2] # nao rodar a junta2, apenas roda a 3 para sair do limite de junta
+                m_nextJoints[2] = m_currJoints[2] # Don't turn joint 2, just turn 3 to leave the joint limit
                 if(m_nextJoints[1] >= 0):
                     m_nextJoints[1] = np.maximum(m_nextJoints[1] - np.radians(180), - np.radians(self.joint_limits[1]))
                 else:

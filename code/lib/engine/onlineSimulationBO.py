@@ -109,21 +109,21 @@ class onlineSimulationWithNetwork(object):
 
     def __init__(self, dataset_dir, centerline_name, renderer=None, training=True):
 
-        # 1 - vai correr aqui para cada centerline!!
+        # 1 - Runs here for every centerline!!
 
         # Load models
         name = centerline_name.split(" ")[0]
-        self.bronchus_model_dir = os.path.join("airways", "AirwayHollow_{}_simUV.obj".format(name)) #parte externa
-        self.airway_model_dir = os.path.join("airways", "AirwayModel_Peach_{}.vtk".format(name)) #parte interna, ar
+        self.bronchus_model_dir = os.path.join("airways", "AirwayHollow_{}_simUV.obj".format(name)) # External part
+        self.airway_model_dir = os.path.join("airways", "AirwayModel_Peach_{}.vtk".format(name)) # Interal part
         self.centerline_name = centerline_name
         centerline_model_name = centerline_name.lstrip(name + " ")
         self.centerline_model_dir = os.path.join("airways", "centerline_models_{}".format(name), centerline_model_name + ".obj")
 
         p.connect(p.GUI) #abre o pybullet para simulacao
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
-        p.setTimeStep(1. / 120.) #120Hz a velocidade da simulacao
+        p.setTimeStep(1. / 120.) #120Hz speed of simulation
         # useMaximalCoordinates is much faster then the default reduced coordinates (Featherstone)
-        p.loadURDF("plane100.urdf", useMaximalCoordinates=True) # modelo que ja tem no local de instalacao.
+        p.loadURDF("plane100.urdf", useMaximalCoordinates=True) # Model already present at installation loaction.
 
         shift = [0, 0, 0]
         meshScale = [0.01, 0.01, 0.01]
@@ -181,8 +181,8 @@ class onlineSimulationWithNetwork(object):
         centerline_size_exp = int(centerline_length / lenth_size_rate)
         centerlineArray_exp = np.zeros((centerline_size_exp, 3))
         for index_exp in range(centerline_size_exp):
-            index = index_exp / (centerline_size_exp - 1) * (centerline_size - 1) # calcula a percentagem de caminho em que esta e vai procurar qual o index correspondente no path inicial
-            index_left_bound = int(index) # vai buscar o valor a esquerda e a direita
+            index = index_exp / (centerline_size_exp - 1) * (centerline_size - 1) # Calculatethe percentage of path it is on, and looks for the corresponding point in the original path
+            index_left_bound = int(index) # takes the value left and right (direction)
             index_right_bound = int(index) + 1
             if index_left_bound == centerline_size - 1:
                 centerlineArray_exp[index_exp] = centerlineArray[index_left_bound]
@@ -210,11 +210,11 @@ class onlineSimulationWithNetwork(object):
 
         # Generate new path in each step
         reader = vtk.vtkPolyDataReader()
-        reader.SetFileName(self.airway_model_dir) #modelo do pulmao oco
+        reader.SetFileName(self.airway_model_dir) # model for hollow lung
         reader.Update()
         self.vtkdata = reader.GetOutput()
         self.targetPoint = centerlineArray[0]
-        self.transformed_target = np.dot(np.linalg.inv(self.R_model), self.targetPoint - self.t_model) * 100 # recalcula para o ponto inicial 
+        self.transformed_target = np.dot(np.linalg.inv(self.R_model), self.targetPoint - self.t_model) * 100 # Recalculate for initial point 
         self.transformed_target_vtk_cor = np.array([-self.transformed_target[0], -self.transformed_target[1], self.transformed_target[2]])  #put in the same coordinate system # x and y here is opposite to those in the world coordinate system
         
         # Collision detection
@@ -231,7 +231,7 @@ class onlineSimulationWithNetwork(object):
         print(np.max(centerlineArray, axis=0))
         print(np.min(centerlineArray, axis=0))
         print(np.argmax(centerlineArray, axis=0))
-        position = p.getBasePositionAndOrientation(airwayBodyId) # position XYZ e orientacao quaternion
+        position = p.getBasePositionAndOrientation(airwayBodyId) # position XYZ at quaternion orientation
 
         # Pyrender initialization
         self.renderer = renderer #pyrender
@@ -278,14 +278,14 @@ class onlineSimulationWithNetwork(object):
         inside_flag = 0
         distance = 5
         
-        # NOTA: os pontos estao ao contrario. O primeiro ponto da lista e na verdade o destino finalda trajetoria
-        #calcula a distancia do ponto  obtido para o mais proximo e verifica se o ponto esta dentro do modelo vtk. Caso ambas se verifiquem, ele fica com o o ponto e segue
+        # NOTE: The points are backwards. The first point on the list is actually the final destination of the route.
+        # Calculates the distance from the obstained point to the closest one, and checks if the point is within the vtk model. If both are true, point is kept.
         while inside_flag == 0 or distance < 0.1:
             rand_start_point_in_original_cor = np.array([(np.random.rand() - 0.5) * 20, 0, (np.random.rand() - 0.5) * 20]) / 100
             rand_start_point = np.dot(R, rand_start_point_in_original_cor) + self.centerlineArray[rand_index] # random variation on the last point position 
 
             # Collision detection (check whether a point is inside the object by vtk and use the closest vertex)
-            transformed_point = np.dot(np.linalg.inv(self.R_model), rand_start_point - self.t_model) * 100 # posicao do ponto inicial dentro do modelo do pulmao
+            transformed_point = np.dot(np.linalg.inv(self.R_model), rand_start_point - self.t_model) * 100 # Position of starting point within lung model
             # transformed_point_vtk_cor = np.array([-transformed_point[0], -transformed_point[1], transformed_point[2]]) # x and y here is opposite to those in the world coordinate system
             transformed_point_vtk_cor = np.array([transformed_point[0], transformed_point[1], transformed_point[2]]) # x and y here is opposite to those in the world coordinate system
             pointId_target = self.pointLocator.FindClosestPoint(transformed_point_vtk_cor)
@@ -315,7 +315,7 @@ class onlineSimulationWithNetwork(object):
         if cur_index <= 0:
             return False
         while(1):
-            length_diff = np.linalg.norm(centerlineArray[cur_index - 1] - centerlineArray[cur_index]) # anda para tras porque os dados estao ao contrario
+            length_diff = np.linalg.norm(centerlineArray[cur_index - 1] - centerlineArray[cur_index]) # Goes backwards because data is backwards?
             centerline_length += length_diff
             cur_index -= 1
             if cur_index <= 0:
@@ -325,7 +325,7 @@ class onlineSimulationWithNetwork(object):
 
 
     def get_images(self, yaw, pitch, t, pos_vector):
-        rgb_img_bullet, _, _ = self.camera.lookat(yaw, pitch, t, -pos_vector) # for visulization (a camara esta rodada em relacao ao mundo Z=Y, Y = -Z)
+        rgb_img_bullet, _, _ = self.camera.lookat(yaw, pitch, t, -pos_vector) # for visulization (the camera is rotated so Z=Y, Y = -Z)
         rgb_img_bullet = rgb_img_bullet[:, :, :3]
         rgb_img_bullet = cv2.resize(rgb_img_bullet, (200, 200))
         rgb_img_bullet = np.transpose(rgb_img_bullet, axes=(2, 0, 1))
@@ -481,7 +481,7 @@ class onlineSimulationWithNetwork(object):
 
         ######################
         # Defining initial camera orientation to be always aligned with the path
-        pos_vector_gt = (self.centerlineArray[count - 1] - self.centerlineArray[count]) / np.linalg.norm(self.centerlineArray[count - 1] - self.centerlineArray[count]) # vetor da direcao ideal do movimento
+        pos_vector_gt = (self.centerlineArray[count - 1] - self.centerlineArray[count]) / np.linalg.norm(self.centerlineArray[count - 1] - self.centerlineArray[count]) # Ideal direction vector
         pos_vector_norm = np.linalg.norm(pos_vector_gt)
 
         pitch = np.arcsin(pos_vector_gt[2] / pos_vector_norm)
@@ -491,13 +491,13 @@ class onlineSimulationWithNetwork(object):
             yaw = np.arccos(pos_vector_gt[1] / np.sqrt(pos_vector_gt[0] ** 2 + pos_vector_gt[1] ** 2))
         ##############################
 
-        #pitch, yaw, x, y, z = self.random_start_point(rand_index=start_index) # em teste nao ha random point, comeca no inicio
+        #pitch, yaw, x, y, z = self.random_start_point(rand_index=start_index) # No random point for testing, starts at beginning of path
 
         quat_init = p.getQuaternionFromEuler([pitch, roll, yaw])
         R = p.getMatrixFromQuaternion(quat_init)
         R = np.reshape(R, (3, 3))
         quat = dcm2quat(R)
-        t = np.array([x, y, z])  # pode nao estar em cima do path porque foi adicionado aqui um random em torno do mesmo
+        t = np.array([x, y, z])  #  # Might not be on top of path as random was added to it
         pos_vector = self.centerlineArray[count - 1] - self.centerlineArray[count]
         pos_vector_last = pos_vector
 
@@ -515,7 +515,7 @@ class onlineSimulationWithNetwork(object):
         path_trajectoryR = []
 
         ###
-        m_distBO = 0.003 # distancia a percorrer em cada iteracao mm
+        m_distBO = 0.003 # distance to be covered in each iteration
         m_initalIdx = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()
 
         args.human = True
@@ -525,7 +525,7 @@ class onlineSimulationWithNetwork(object):
             tic = time.time()
             p.stepSimulation()
 
-            #0 - Pose atual da camara no mundo
+            #0 - Current camera position
             pitch_current = pitch
             yaw_current = yaw
             roll_current = roll
@@ -561,8 +561,8 @@ class onlineSimulationWithNetwork(object):
             R_currentCam = p.getMatrixFromQuaternion(quatCam)
             R_currentCam = np.reshape(R_currentCam, (3, 3))
             
-            # Implementar IK de acordo com os inputs dados        
-            t =  t + np.dot(R_currentCam, [0, 0,  -direction[2] * 0.005])  # andar em Z na direcao da camara; OBS: o eixo da camara esta rodado em relacao ao mundo
+            # Implement IK according to the given inputs        
+            t =  t + np.dot(R_currentCam, [0, 0,  -direction[2] * 0.005])  # Walk in Z towards the camera, the camera axis is rotated in relation to the world
 
             #quat_step = p.getQuaternionFromEuler([np.radians(direction[1]), 0, np.radians(direction[0])]) # pitch 0 yaw
             quat_step = p.getQuaternionFromEuler([np.radians(direction[1]), np.radians(direction[0]), 0]) # pitch roll 0
@@ -604,14 +604,13 @@ class onlineSimulationWithNetwork(object):
                 #index_form_dis = self.indexFromDistance(restSmoothedCenterlineArray, len(restSmoothedCenterlineArray) - 1, m_distBO) # vai procurar o ponto do path a seguir, a distancia de m_vel
                 #index_form_dis2 = self.indexFromDistance(restSmoothedCenterlineArray[:index_form_dis], len(restSmoothedCenterlineArray[:index_form_dis]) - 1, m_distBO) # vai procurar o ponto do path a seguir, a distancia de m_vel
                 index_form_dis = self.indexFromDistance(restSmoothedCenterlineArray, len(restSmoothedCenterlineArray) - 1, 0.01) # vai procurar o ponto do path a seguir, a distancia de m_vel
-                index_form_dis2 = self.indexFromDistance(restSmoothedCenterlineArray[:index_form_dis], len(restSmoothedCenterlineArray[:index_form_dis]) - 1, 0.1) # vai procurar o ponto do path a seguir, a distancia de m_vel
- 
+                index_form_dis2 = self.indexFromDistance(restSmoothedCenterlineArray[:index_form_dis], len(restSmoothedCenterlineArray[:index_form_dis]) - 1, 0.1) # Looks for the point on the path to follow the distance from m_vel
                 if not index_form_dis or not index_form_dis2:
                     index_form_dis = len(restSmoothedCenterlineArray) - 1
                     index_form_dis2 = len(restSmoothedCenterlineArray) - 2
-                pos_vector_gt = (restSmoothedCenterlineArray[index_form_dis2] - restSmoothedCenterlineArray[index_form_dis]) / np.linalg.norm(restSmoothedCenterlineArray[index_form_dis2] - restSmoothedCenterlineArray[index_form_dis]) # vetor da direcao ideal do movimento
+                pos_vector_gt = (restSmoothedCenterlineArray[index_form_dis2] - restSmoothedCenterlineArray[index_form_dis]) / np.linalg.norm(restSmoothedCenterlineArray[index_form_dis2] - restSmoothedCenterlineArray[index_form_dis]) # Ideal direction vector
 
-            # se andar para a frente, apaga tudo para tras
+            # If you move forward, everything goes backward
             #if(direction[2]>0):
                 #m_initalIdx = index_form_dis # dont come back
 
@@ -620,7 +619,7 @@ class onlineSimulationWithNetwork(object):
                 count -= 1
                 continue
         
-            # A - Proxima posicao camara
+            # A - First camera position
             m_nextgtpos = restSmoothedCenterlineArray[index_form_dis]
             #OU smooth da atual ate a proxima x 2
             m_nextgtposSmooth = np.mean(restSmoothedCenterlineArray[index_form_dis2-1:index_form_dis], axis=0) 
@@ -670,11 +669,11 @@ class onlineSimulationWithNetwork(object):
         x, y, z = self.centerlineArray[start_index]
         yaw = 0
         pitch = 0
-        #pitch, yaw, x, y, z = self.random_start_point(rand_index=start_index) # em teste nao ha random point, comeca no inicio
+        #pitch, yaw, x, y, z = self.random_start_point(rand_index=start_index) # No random point in testing, starts at beginning
 
         ######################
         # Defining initial camera orientation to be always aligned with the path
-        pos_vector_gt = (self.centerlineArray[count - 1] - self.centerlineArray[count]) / np.linalg.norm(self.centerlineArray[count - 1] - self.centerlineArray[count]) # vetor da direcao ideal do movimento
+        pos_vector_gt = (self.centerlineArray[count - 1] - self.centerlineArray[count]) / np.linalg.norm(self.centerlineArray[count - 1] - self.centerlineArray[count]) # Ideal direction vector
         pos_vector_norm = np.linalg.norm(pos_vector_gt)
 
         pitch = np.arcsin(pos_vector_gt[2] / pos_vector_norm)
@@ -688,7 +687,7 @@ class onlineSimulationWithNetwork(object):
         R = p.getMatrixFromQuaternion(quat_init)
         R = np.reshape(R, (3, 3))
         quat = dcm2quat(R)
-        t = np.array([x, y, z])  # pode nao estar em cima do path porque foi adicionado aqui um random em torno do mesmo
+        t = np.array([x, y, z])  # Might not be on top of path because random was added here around it
         pos_vector = self.centerlineArray[count - 1] - self.centerlineArray[count]
         pos_vector_last = pos_vector
 
@@ -706,7 +705,7 @@ class onlineSimulationWithNetwork(object):
         path_trajectoryR = []
 
         ###
-        m_distBO = 0.003 # distancia a percorrer em cada iteracao mm
+        m_distBO = 0.003 # distance to be covered in each iteration
         m_initalIdx = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()
 
         args.human = True
@@ -716,7 +715,7 @@ class onlineSimulationWithNetwork(object):
             tic = time.time()
             p.stepSimulation()
 
-            #0 - Pose atual da camara no mundo
+            #0 - Actual camera position
             pitch_current = pitch / 180 * np.pi
             yaw_current = yaw / 180 * np.pi
             quat_current = p.getQuaternionFromEuler([pitch_current, 0, yaw_current])
@@ -752,11 +751,11 @@ class onlineSimulationWithNetwork(object):
                 count -= 1
                 continue
         
-            # 1 - Proxima posicao camara
+            # 1 - First position of camera
             t = restSmoothedCenterlineArray[index_form_dis]
 
-            #2 - calcular qual devera ser a posicao ideal de vista da camara nesse spot
-            # para isso ir buscar um ponto a frente x mm e calcular o vector do desejado para esse e definir ai a vista da camara
+            #2 - Calculate wat the ideal camera view position whould be in that spot.
+            # To do this, look for a point in fron x mm and calculate the desired vector for that, and define camera view here.
             pitch = np.arcsin(pos_vector_gt[2] / pos_vector_norm)
             if pos_vector_gt[0] > 0:
                 yaw = -np.arccos(pos_vector_gt[1] / np.sqrt(pos_vector_gt[0] ** 2 + pos_vector_gt[1] ** 2))  
@@ -765,7 +764,7 @@ class onlineSimulationWithNetwork(object):
             pitch = pitch / np.pi * 180
             yaw = yaw / np.pi * 180
 
-            # 3 - no mundo da camara, mas nao vai ser usado para ja
+            # 3 - In the camera world, not currently in use
             pose_gt_in_camera_cor = np.array([pos_vector_gt[0], -pos_vector_gt[2], pos_vector_gt[1]])
             pitch_gt_in_camera_cor = np.arcsin(-pose_gt_in_camera_cor[1] / np.linalg.norm(pose_gt_in_camera_cor)) #calcula na mesma no frame do mundo
             if pose_gt_in_camera_cor[0] > 0:
@@ -822,7 +821,7 @@ class onlineSimulationWithNetwork(object):
         quat_init = p.getQuaternionFromEuler([pitch, roll, yaw])
         R = p.getMatrixFromQuaternion(quat_init)
         R = np.reshape(R, (3, 3))
-        t = np.array([x, y, z])  # pode nao estar em cima do path porque foi adicionado aqui um random em torno do mesmo
+        t = np.array([x, y, z])  # Might not be on top of path because a random was added around it here
         pos_vector = self.centerlineArray[count - 1] - self.centerlineArray[count]
 
         for i in range(len(self.centerlineArray) - 1):
@@ -839,7 +838,7 @@ class onlineSimulationWithNetwork(object):
         path_jointvel = []
 
         ###
-        m_distBO = 0.003 # distancia a percorrer em cada iteracao mm
+        m_distBO = 0.003 # distance to be covered in each iteration
 
         args.human = True
         direction = np.array([0, 0, 0]) 
@@ -852,7 +851,7 @@ class onlineSimulationWithNetwork(object):
             tic = time.time()
             p.stepSimulation()
 
-            #0 - Pose atual da camara no mundo
+            #0 - Actual camera position
             pitch_current = pitch
             yaw_current = yaw
             roll_current = roll
@@ -918,7 +917,7 @@ class onlineSimulationWithNetwork(object):
   
             
             # Implementar IK de acordo com os inputs dados        
-            t =  t + np.dot(R_currentCam, [0, 0,  m_jointsVel[0]])  # andar em Z na direcao da camara; OBS: o eixo da camara esta rodado em relacao ao mundo
+            t =  t + np.dot(R_currentCam, [0, 0,  m_jointsVel[0]])  # Walk in Z towards camera, the camera axis is rotated in relation to real world
 
             quat_step = p.getQuaternionFromEuler([-np.radians(m_jointsVel[2]) * 5, 0, -np.radians(m_jointsVel[1]) * 5]) # pitch 0 yaw
             
@@ -1008,7 +1007,7 @@ class onlineSimulationWithNetwork(object):
         path_jointvel = []
 
         ###
-        m_distBO = 0.003 # distancia a percorrer em cada iteracao mm
+        m_distBO = 0.003 # distance to cover in each iteration
 
         args.human = True
         direction = np.array([0, 0, 0]) 
@@ -1024,7 +1023,7 @@ class onlineSimulationWithNetwork(object):
             tic = time.time()
             p.stepSimulation()
 
-            #0 - Pose atual da camara no mundo
+            #0 - Actua camera position in the world
             pitch_current = pitch
             yaw_current = yaw
             roll_current = roll

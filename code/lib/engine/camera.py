@@ -1,6 +1,15 @@
 import pybullet as p
 import numpy as np
 
+# ------------------------- Overall --------------------------------
+# This code defines two classes for camera, fixedCamera and movingCamera.
+# Both classes inherit from a base camera class, and provide methods for
+# capturing images, getting intrinsics and adjusting the camera view
+# ------------------------------------------------------------------
+
+
+# Function is currently unused, is assumed to be a helper function for capturing images
+# calculates view and projection matrix, and then ues p.getCameraImage to get the image data.
 def setCameraPicAndGetPic(RPY = True,
                         cameraEyePosition=[0, 1, 1], cameraUpVector=[0,-1,0],
                         distance=0.5, yaw=0, pitch=-30, roll = 0, upAxisIndex = 2, 
@@ -39,6 +48,7 @@ def setCameraPicAndGetPic(RPY = True,
     
     return width, height, rgbImg, depthImg, segImg
 
+# Base class for camera, serves as parent for fixedCamera and movingCamera
 class Camera(object):
     def __init__(self):
         pass
@@ -53,37 +63,39 @@ class Camera(object):
         pass
 
 
+# Class representing camera with fixed position and orientation
 class fixedCamera(Camera):
 
     def __init__(self, dis, physics_server, targetPos = [0, 0, 0], physicsClientId = 0, 
                 # RPY
                 yaw=0, pitch=0, roll=0, upAxisIndex = 2,
-                # Intrinsics
+                # Intrinsics, euler angles defining orientation
                 fov=2 * np.arctan(100 / 181.9375) / np.pi * 180, aspect=None, nearVal=0.00001, farVal=100,
-                # IMG
+                # Image specifications 200x200 pixels
                 width=200, height=200
                 ):
 
-        self.dis = dis
-        self.targetPos = targetPos
-        self.physicsClientId = physicsClientId
-        self.p = physics_server
+        self.dis = dis                          # Distance from target
+        self.targetPos = targetPos              # Target position
+        self.physicsClientId = physicsClientId  # ID of physics client
+        self.p = physics_server                 # Physics server
 
-        self.yaw = yaw
-        self.pitch = pitch
-        self.roll = roll
-        self.upAxisIndex = upAxisIndex
+        self.yaw = yaw                          # Yaw angle
+        self.pitch = pitch                      # Pitch angle
+        self.roll = roll                        # Roll angle
+        self.upAxisIndex = upAxisIndex          # Up axis index (usually 2 for z)
 
-        self.fov = fov
-        self.aspect = aspect
-        if aspect is None:
-            self.aspect = width / height
-        self.far = farVal
-        self.near = nearVal
+        self.fov = fov                          # Field of view
+        self.aspect = aspect                    # Aspect ratio of image
+        if aspect is None:                      # If aspect ratio is not provided, calculate it
+            self.aspect = width / height        # Aspect ratio is width divided by height
+        self.far = farVal                       # Far clipping plane
+        self.near = nearVal                     # Near clipping plane
 
         self.width = width
         self.height = height
 
+    # Computes matrix, and transforms world coordinates into camera coordinates
     def getViewMatrix(self):
 
         viewMatrix = self.p.computeViewMatrixFromYawPitchRoll(
@@ -94,6 +106,7 @@ class fixedCamera(Camera):
         
         return viewMatrix
 
+    # Computes projection matrix, which projects 3D points onto the 2D image plane
     def getProjectionMatrix(self):
 
         projectionMatrix = p.computeProjectionMatrixFOV(
@@ -106,8 +119,9 @@ class fixedCamera(Camera):
 
         return projectionMatrix
 
+    # Captures image from camera
     def getImg(self):
-        # get images
+        # Get the necessary matrices, extract the image data
         viewMatrix = self.getViewMatrix()
         projectionMatrix = self.getProjectionMatrix()
         width, height, rgbImg, depthImg, segImg =\
@@ -117,7 +131,7 @@ class fixedCamera(Camera):
                             # lightDirection=[-0.15, 0.05, 6],
                             # lightDirection=[0, 0, 10],
                             physicsClientId=self.physicsClientId)
-        # postprocess
+        # Postprocess to convert to actual distance
         depth = self.far * self.near / (self.far - (self.far - self.near) * depthImg)
         rgb = np.reshape(rgbImg, [height, width, 4])
         rgb = rgb[:, :, :3]
@@ -125,6 +139,7 @@ class fixedCamera(Camera):
 
         return rgb, depth
 
+    # Calculate intrinsic matrix (focal length) from projection matrix
     def getIntrinsic(self):
 
         projectionMatrix = self.getProjectionMatrix()
@@ -138,6 +153,7 @@ class fixedCamera(Camera):
 
         return intrinsic
 
+    # Adjusts camera view to given yaw, pitch and target position
     def lookat(self, yaw, pitch, targetPos, lightDirection):
         
         self.yaw = yaw
@@ -147,7 +163,7 @@ class fixedCamera(Camera):
 
         return self.visualize()
     
-
+    # Same as lookat, but includes roll
     def lookatBO(self, yaw, pitch, roll, targetPos, lightDirection):
         
         self.yaw = yaw
@@ -158,6 +174,7 @@ class fixedCamera(Camera):
 
         return self.visualize()
 
+    # Resets the debug visualizer camera, and captures an image using the current parameters
     def visualize(self):
 
         # self.p.configureDebugVisualizer(self.p.COV_ENABLE_GUI, 1, lightPosition=[0, 0, 4])
@@ -190,7 +207,9 @@ class fixedCamera(Camera):
         segImg = np.reshape(segImg, [200,200])
         return rgbImg, depthImg, segImg
 
-
+# Class representing camera with adjustable position and orientation
+# Very similar to above, main difference is in lookat method, which doesn't include the
+# lightDirection parameter.
 class movingCamera(Camera):
 
     def __init__(self, dis, physics_server, targetPos = [0, 0, 0], physicsClientId = 0, 

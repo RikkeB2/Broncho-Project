@@ -31,16 +31,21 @@ from scipy.io import savemat
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
-
+# Function that draws a control pad iscon on a given iamge using OpenCV
+# Also highlights the direction indiated by the direction paramter.
 def apply_control_pad_icon(image, direction):
     # color = (0, 165, 255)
     color = (204, 0, 51)
     offset = np.array([-160, -50])
+
+    # Coordinates for arrow keys as numpy arrays
     up_arrow = np.array([[255, 90], [240, 105], [270, 105]]) + offset
     down_arrow = np.array([[255, 170], [240, 155], [270, 155]]) + offset
     left_arrow = np.array([[210, 130], [225, 115], [225, 145]]) + offset
     right_arrow = np.array([[300, 130], [285, 115], [285, 145]]) + offset
     # front_arrow = np.array([[255, 125], [245, 135], [265, 135]])
+
+    # Defines coordaintes for a small rectangle, representing forward direction.
     front_rect = np.array([[245, 120], [265, 140]]) + offset
     cv2.drawContours(image, [up_arrow], 0, color, 2)
     cv2.drawContours(image, [down_arrow], 0, color, 2)
@@ -49,6 +54,8 @@ def apply_control_pad_icon(image, direction):
     # cv2.drawContours(image, [front_arrow], 0, (255, 255, 0), 2)
     # cv2.circle(image, [255, 130], 10, (255, 255, 0), 2)
     cv2.rectangle(image, front_rect[0], front_rect[1], color, 2)
+
+    # Highlights the direction indicated by the direction parameter
     if direction == [1, 0, 0, 0, 0]:
         # cv2.putText(image, 'Up', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
         cv2.drawContours(image, [up_arrow], 0, color, -1)
@@ -72,43 +79,44 @@ def apply_control_pad_icon(image, direction):
     return image
 
 
+# Function that converts a direction cosine matrix (DCM), rotation matrix R, into quaternion form.
 def dcm2quat(R):
 	
-    epsilon = 1e-5
-    trace = R[0, 0] + R[1, 1] + R[2, 2]
-    assert trace > -1
-    if np.fabs(trace + 1) < epsilon:
-        if np.argmax([R[0, 0], R[1, 1], R[2, 2]]) == 0:
+    epsilon = 1e-5                                          # threshold for numerical errors
+    trace = R[0, 0] + R[1, 1] + R[2, 2]                     # trace of the rotation matrix, is sum of diagonal elements
+    assert trace > -1                                       # trace must be greater than -1
+    if np.fabs(trace + 1) < epsilon:                        # if trace is very close to -1 (special case that's numerically unstable)
+        if np.argmax([R[0, 0], R[1, 1], R[2, 2]]) == 0:     # if the first diagonal element is the largest
             t = np.sqrt(1 + R[0, 0] - R[1, 1] - R[2, 2])
             q0 = (R[2, 1] - R[1, 2]) / t
             q1 = t / 4
             q2 = (R[0, 2] + R[2, 0]) / t
             q3 = (R[0, 1] + R[1, 0]) / t
-        elif np.argmax([R[0, 0], R[1, 1], R[2, 2]]) == 1:
+        elif np.argmax([R[0, 0], R[1, 1], R[2, 2]]) == 1:   # if the second diagonal element is the largest
             t = np.sqrt(1 - R[0, 0] + R[1, 1] - R[2, 2])
             q0 = (R[0, 2] - R[2, 0]) / t
             q1 = (R[0, 1] + R[1, 0]) / t
             q2 = t / 4
             q3 = (R[2, 1] + R[1, 2]) / t
         else:
-            t = np.sqrt(1 - R[0, 0] - R[1, 1] + R[2, 2])
+            t = np.sqrt(1 - R[0, 0] - R[1, 1] + R[2, 2])    # if the third diagonal element is the largest
             q0 = (R[1, 0] - R[0, 1]) / t
             q1 = (R[0, 2] + R[2, 0]) / t
             q2 = (R[1, 2] - R[2, 1]) / t
             q3 = t / 4
     else:
-        q0 = np.sqrt(1 + R[0, 0] + R[1, 1] + R[2, 2]) / 2
+        q0 = np.sqrt(1 + R[0, 0] + R[1, 1] + R[2, 2]) / 2   # general case
         q1 = (R[2, 1] - R[1, 2]) / (4 * q0)
         q2 = (R[0, 2] - R[2, 0]) / (4 * q0)
         q3 = (R[1, 0] - R[0, 1]) / (4 * q0)
 
-    return np.array([q1, q2, q3, q0])
+    return np.array([q1, q2, q3, q0])                       # return the quaternion in the form [x, y, z, w]
 
 
 class onlineSimulationWithNetwork(object):
 
     def __init__(self, dataset_dir, centerline_name, renderer=None, training=True):
-        # vai correr aqui para cada centerline!!
+        # Runs here for each centerline!!!
         # Create saving folder
         if training:
             if not os.path.exists(os.path.join(dataset_dir, "centerlines_with_dagger")):
@@ -117,18 +125,18 @@ class onlineSimulationWithNetwork(object):
 
         # Load models
         name = centerline_name.split(" ")[0]
-        self.bronchus_model_dir = os.path.join("airways", "AirwayHollow_{}_simUV.obj".format(name)) #parte externa
+        self.bronchus_model_dir = os.path.join("airways", "AirwayHollow_{}_simUV.obj".format(name)) # external part
         # self.bronchus_model_dir = os.path.join("airways", "AirwayHollow_{}.obj".format(name))
-        self.airway_model_dir = os.path.join("airways", "AirwayModel_Peach_{}.vtk".format(name)) #parte interna, ar
+        self.airway_model_dir = os.path.join("airways", "AirwayModel_Peach_{}.vtk".format(name)) # internal part, bronchus
         self.centerline_name = centerline_name
         centerline_model_name = centerline_name.lstrip(name + " ")
         self.centerline_model_dir = os.path.join("airways", "centerline_models_{}".format(name), centerline_model_name + ".obj")
 
-        p.connect(p.GUI) #abre o pybullet para simulacao
+        p.connect(p.GUI) # open pybullet for simulation
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
-        p.setTimeStep(1. / 120.) #120Hz a velocidade da simulacao
+        p.setTimeStep(1. / 120.) # 120Hz speed of simulation
         # useMaximalCoordinates is much faster then the default reduced coordinates (Featherstone)
-        p.loadURDF("plane100.urdf", useMaximalCoordinates=True) # modelo que ja tem no local de instalacao.
+        p.loadURDF("plane100.urdf", useMaximalCoordinates=True) # Model that's already installed at location
 
         shift = [0, 0, 0]
         meshScale = [0.01, 0.01, 0.01]
@@ -224,8 +232,8 @@ class onlineSimulationWithNetwork(object):
         centerline_size_exp = int(centerline_length / lenth_size_rate)
         centerlineArray_exp = np.zeros((centerline_size_exp, 3))
         for index_exp in range(centerline_size_exp):
-            index = index_exp / (centerline_size_exp - 1) * (centerline_size - 1) # calcula a percentagem de caminho em que esta e vai procurar qual o index correspondente no path inicial
-            index_left_bound = int(index) # vai buscar o valor a esquerda e a direita
+            index = index_exp / (centerline_size_exp - 1) * (centerline_size - 1) # Calculates the percentage of the path, it is on, and will look for corresponding index on initial path
+            index_left_bound = int(index) # Takes the value left and right
             index_right_bound = int(index) + 1
             if index_left_bound == centerline_size - 1:
                 centerlineArray_exp[index_exp] = centerlineArray[index_left_bound]
@@ -255,12 +263,12 @@ class onlineSimulationWithNetwork(object):
 
         # Generate new path in each step
         reader = vtk.vtkPolyDataReader()
-        reader.SetFileName(self.airway_model_dir) #modelo do pulmao oco
+        reader.SetFileName(self.airway_model_dir) # Model of hollow lung
         reader.Update()
         self.vtkdata = reader.GetOutput()
         # self.centerlineExtractor = ExtractCenterline(self.vtkdata)
         self.targetPoint = centerlineArray[0]
-        self.transformed_target = np.dot(np.linalg.inv(self.R_model), self.targetPoint - self.t_model) * 100 # recalcula para o ponto inicial 
+        self.transformed_target = np.dot(np.linalg.inv(self.R_model), self.targetPoint - self.t_model) * 100 # Recalculate to the starting point 
         self.transformed_target_vtk_cor = np.array([-self.transformed_target[0], -self.transformed_target[1], self.transformed_target[2]])  #put in the same coordinate system # x and y here is opposite to those in the world coordinate system
         
         # Collision detection
@@ -280,7 +288,7 @@ class onlineSimulationWithNetwork(object):
         print(np.min(centerlineArray, axis=0))
         print(np.argmax(centerlineArray, axis=0))
         # print(centerlineArray[1350])
-        position = p.getBasePositionAndOrientation(airwayBodyId) # position XYZ e orientacao quaternion
+        position = p.getBasePositionAndOrientation(airwayBodyId) # position XYZ at quaternion orientation
 
         # Pyrender initialization
         self.renderer = renderer #pyrender
@@ -328,9 +336,9 @@ class onlineSimulationWithNetwork(object):
         if not rand_index:
             rand_index = np.random.choice(np.arange(int(2 * centerline_length / 3), centerline_length - 3), 1)[0]
         pos_vector = self.centerlineArray[rand_index - 2] - self.centerlineArray[rand_index + 2]
-        pitch = np.arcsin(pos_vector[2] / np.linalg.norm(pos_vector)) # calcula o angulo que esta levantado do plano XY
+        pitch = np.arcsin(pos_vector[2] / np.linalg.norm(pos_vector)) # Calculate the angle that is raised from the XY plane
         if pos_vector[0] > 0:
-            yaw = -np.arccos(pos_vector[1] / np.sqrt(pos_vector[0] ** 2 + pos_vector[1] ** 2))  # acos(vetor projetado no Y / vetor projetado no plano XY); angulo rodado em torno de X no plano XY
+            yaw = -np.arccos(pos_vector[1] / np.sqrt(pos_vector[0] ** 2 + pos_vector[1] ** 2))  # Loops (vector projected on Y / vector projected on XY plane); angle rotated around X in the XY plane
         else:
             yaw = np.arccos(pos_vector[1] / np.sqrt(pos_vector[0] ** 2 + pos_vector[1] ** 2))
         quat = p.getQuaternionFromEuler([pitch, 0, yaw])
@@ -341,14 +349,14 @@ class onlineSimulationWithNetwork(object):
         inside_flag = 0
         distance = 5
         
-        # NOTA: os pontos estao ao contrario. O primeiro ponto da lista e na verdade o destino finalda trajetoria
-        #calcula a distancia do ponto  obtido para o mais proximo e verifica se o ponto esta dentro do modelo vtk. Caso ambas se verifiquem, ele fica com o o ponto e segue
+        # NOTE: The points are backwards. The first point on the list is actually the final destination of the route.
+        # Calculates the distance from the obstained point to the closest one, and checks if the point is within the vtk model. If both are true, point is kept.
         while inside_flag == 0 or distance < 0.1:
             rand_start_point_in_original_cor = np.array([(np.random.rand() - 0.5) * 20, 0, (np.random.rand() - 0.5) * 20]) / 100
             rand_start_point = np.dot(R, rand_start_point_in_original_cor) + self.centerlineArray[rand_index] # random variation on the last point position 
 
             # Collision detection (check whether a point is inside the object by vtk and use the closest vertex)
-            transformed_point = np.dot(np.linalg.inv(self.R_model), rand_start_point - self.t_model) * 100 # posicao do ponto inicial dentro do modelo do pulmao
+            transformed_point = np.dot(np.linalg.inv(self.R_model), rand_start_point - self.t_model) * 100 # Position of starting point within lung model
             # transformed_point_vtk_cor = np.array([-transformed_point[0], -transformed_point[1], transformed_point[2]]) # x and y here is opposite to those in the world coordinate system
             transformed_point_vtk_cor = np.array([transformed_point[0], transformed_point[1], transformed_point[2]]) # x and y here is opposite to those in the world coordinate system
             pointId_target = self.pointLocator.FindClosestPoint(transformed_point_vtk_cor)
@@ -378,7 +386,7 @@ class onlineSimulationWithNetwork(object):
         if cur_index <= 0:
             return False
         while(1):
-            length_diff = np.linalg.norm(centerlineArray[cur_index - 1] - centerlineArray[cur_index]) # anda para tras porque os dados estao ao contrario
+            length_diff = np.linalg.norm(centerlineArray[cur_index - 1] - centerlineArray[cur_index]) # Goes backwards because data is backwards?
             centerline_length += length_diff
             cur_index -= 1
             if cur_index <= 0:
@@ -424,7 +432,7 @@ class onlineSimulationWithNetwork(object):
             # pitch = 0
         else:
             start_index = len(self.centerlineArray) - 3
-            pitch, yaw, x, y, z = self.random_start_point(rand_index=start_index) # em teste nao ha random point, comeca no inicio
+            pitch, yaw, x, y, z = self.random_start_point(rand_index=start_index) # No random point for testing, starts at beginning of path
             yaw = 0
             # pitch = -89.9999
             pitch = 0
@@ -437,7 +445,7 @@ class onlineSimulationWithNetwork(object):
         R = p.getMatrixFromQuaternion(quat_init)
         R = np.reshape(R, (3, 3))
         quat = dcm2quat(R)
-        t = np.array([x, y, z])  # pode nao estar em cima do path porque foi adicionado aqui um random em torno do mesmo
+        t = np.array([x, y, z])  # Might not be on top of path as random was added to it
         pos_vector = self.centerlineArray[count - 1] - self.centerlineArray[count]
         pos_vector_last = pos_vector
 
@@ -468,21 +476,21 @@ class onlineSimulationWithNetwork(object):
                 path_centerline_ratio_list.append(1.0)  # complete the path
                 break
             else:
-                restSmoothedCenterlineArray = self.smooth_centerline(self.originalCenterlineArray[:nearest_original_centerline_point_sim_cor_index], win_width=10) # filtro media. Apenas ate ponto mais proximo atual, elimina os anteriormente visitados 
+                restSmoothedCenterlineArray = self.smooth_centerline(self.originalCenterlineArray[:nearest_original_centerline_point_sim_cor_index], win_width=10) # Media filter. Only up to current closests point, eliminates those previously visited. 
                 # if len(restSmoothedCenterlineArray) < 10:
                 #     # pos_vector_gt = (restSmoothedCenterlineArray[0] - t) / len(restSmoothedCenterlineArray)
                 #     break
                 # else:
                 #     pos_vector_gt = (restSmoothedCenterlineArray[-10] - t) / 10
                 # index_form_dis = self.indexFromDistance(restSmoothedCenterlineArray, len(restSmoothedCenterlineArray) - 1, 0.07 * 0.85)
-                index_form_dis = self.indexFromDistance(restSmoothedCenterlineArray, len(restSmoothedCenterlineArray) - 1, 0.07) # vai procurar o ponto do path a seguir, a distancia de 0.07
+                index_form_dis = self.indexFromDistance(restSmoothedCenterlineArray, len(restSmoothedCenterlineArray) - 1, 0.07) # Looks for next path point, at distance of 0.07
                 if not index_form_dis:
                     if training:
                         path_centerline_ratio_list.append(1.0)  # complete the path
                         break
                     else:
                         index_form_dis = len(restSmoothedCenterlineArray) - 1
-                pos_vector_gt = (restSmoothedCenterlineArray[index_form_dis] - t) / 10 # vetor da direcao ideal do movimento
+                pos_vector_gt = (restSmoothedCenterlineArray[index_form_dis] - t) / 10 # Ideal direction of movement vector
 
             # # Genterate ground truth camera path (maybe not necessary)
             # sourcePoint = t
@@ -532,9 +540,9 @@ class onlineSimulationWithNetwork(object):
                 # else:
                 #     pos_vector_current = (restSmoothedCenterlineArray[-30] - t) / 30
                 # index_form_dis = self.indexFromDistance(restSmoothedCenterlineArray, len(restSmoothedCenterlineArray) - 1, 0.2 * 0.85)
-                index_form_dis = self.indexFromDistance(restSmoothedCenterlineArray, len(restSmoothedCenterlineArray) - 1, 0.2) # como em cima, mas procura im ponto mais distante
+                index_form_dis = self.indexFromDistance(restSmoothedCenterlineArray, len(restSmoothedCenterlineArray) - 1, 0.2) # As above, to search for a more distant point
                 if index_form_dis:
-                    pos_vector_current = (restSmoothedCenterlineArray[index_form_dis] - t) / 30 #cria dois vetores, o GT mais proxima e o current, mais distante
+                    pos_vector_current = (restSmoothedCenterlineArray[index_form_dis] - t) / 30 # Creates two vectors, GT closest and current furthest
                 else:
                     path_centerline_ratio_list.append(1.0)  # complete the path
                     # break
@@ -548,13 +556,13 @@ class onlineSimulationWithNetwork(object):
             pose_next_in_current_cor = np.dot(np.linalg.inv(R_current), pos_vector_current)
             pose_gt_in_current_cor = np.dot(np.linalg.inv(R_current), pos_vector_gt)
 
-            ## Aqui altera a ordem das variaveis Y = -Z, Z = Y (rotacao de 90 no X)
+            ## Here the order of variables changes Y = -Z, Z = Y (X rotated 90 deg)
             pose_gt_in_camera_cor = np.array([pose_gt_in_current_cor[0], -pose_gt_in_current_cor[2], pose_gt_in_current_cor[1]])
-            pitch_gt_in_camera_cor = np.arcsin(-pose_gt_in_camera_cor[1] / np.linalg.norm(pose_gt_in_camera_cor)) #calcula na mesma no frame do mundo
+            pitch_gt_in_camera_cor = np.arcsin(-pose_gt_in_camera_cor[1] / np.linalg.norm(pose_gt_in_camera_cor)) # Calculate the same in the world frame
             if pose_gt_in_camera_cor[0] > 0:
                 yaw_gt_in_camera_cor = np.arccos(pose_gt_in_camera_cor[2] / np.sqrt(pose_gt_in_camera_cor[0] ** 2 + pose_gt_in_camera_cor[2] ** 2))  
             else:
-                yaw_gt_in_camera_cor = -np.arccos(pose_gt_in_camera_cor[2] / np.sqrt(pose_gt_in_camera_cor[0] ** 2 + pose_gt_in_camera_cor[2] ** 2)) #calcula na mesma no frame do mundo
+                yaw_gt_in_camera_cor = -np.arccos(pose_gt_in_camera_cor[2] / np.sqrt(pose_gt_in_camera_cor[0] ** 2 + pose_gt_in_camera_cor[2] ** 2)) # Calculate the same in the world frame
             theta_cone = np.arccos(pose_next_in_current_cor[1] / np.linalg.norm(pose_next_in_current_cor)) / np.pi * 180
             current_cor_x = pose_next_in_current_cor[0]
             current_cor_y = pose_next_in_current_cor[2]

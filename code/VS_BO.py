@@ -5,13 +5,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
-
 from lib.engine.onlineSimulationBO import onlineSimulationWithNetwork as onlineSimulatorBO
-
 from scipy.io import savemat
-
 np.random.seed(0)
 
+# --------------------------------------------------------------------------------
+# This code runs a simulation of the SCNet with the online simulator
+# The online simulator is a simplified version of the real simulator
+# --------------------------------------------------------------------------------
 
 def get_args():
     parser = argparse.ArgumentParser(description='Train the SCNet on images and target landmarks',

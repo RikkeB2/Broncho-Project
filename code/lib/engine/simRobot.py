@@ -41,19 +41,6 @@ class BroncoRobot1(object):
                 m_jointsVelRel[1] = 0
                 m_jointsVelRel[2] = (imgTarget[1] - m_middleImage[1]) / (m_middleImage[1])
                 
-        #if(np.abs(m_jointsVelRel[1]) < 0.1):
-        #    m_jointsVelRel[2] = (imgTarget[1] - m_middleImage[1]) / (m_middleImage[1])
-        #    m_jointsVelRel[1] = 0
-        #else:
-        #    m_jointsVelRel[2] = 0
-
-        #if(np.abs(m_jointsVelRel[1]) < 0.1):
-        #    m_jointsVelRel[1] = 0
-        #    m_jointsVelRel[2] = (imgTarget[1] - 200 / 2) / (200 / 2)
-        #elif(np.abs(m_jointsVelRel[1]) >= 0.1 and np.abs(m_jointsVelRel[1]) < 0.2):
-        #    m_jointsVelRel[2] = (imgTarget[1] - 200 / 2) / (200 / 2)
-        #else:
-        #    m_jointsVelRel[2] = 0
 
         # Compute next joint values
         m_nextJoints = np.add(m_currJoints, np.multiply(-np.radians(m_jointsVelRel), self.vel_limits))

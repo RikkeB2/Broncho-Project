@@ -1,43 +1,6 @@
 import pybullet as p
 import numpy as np
 
-def setCameraPicAndGetPic(RPY = True,
-                        cameraEyePosition=[0, 1, 1], cameraUpVector=[0,-1,0],
-                        distance=0.5, yaw=0, pitch=-30, roll = 0, upAxisIndex = 2, 
-                        cameraTargetPosition=[0, 0, 0], 
-                        width : int = 320, height : int = 240, physicsClientId : int = 0):
-    """
-
-    """
-    # basePos, baseOrientation = p.getBasePositionAndOrientation(robot_id, physicsClientId=physicsClientId)
-    matrix = p.getMatrixFromQuaternion(baseOrientation, physicsClientId=physicsClientId)
-
-    # basePos = np.array(basePos)
-    # cameraPos = basePos + BASE_RADIUS * tx_vec + 0.5 * BASE_THICKNESS * tz_vec
-    targetPos = cameraPos + 1 * tx_vec
-
-    viewMatrix = p.computeViewMatrix(
-        cameraEyePosition=cameraPos,
-        cameraTargetPosition=targetPos,
-        cameraUpVector=tz_vec,
-        physicsClientId=physicsClientId
-    )
-    projectionMatrix = p.computeProjectionMatrixFOV(
-        fov=50.0,               
-        aspect=1.0,
-        nearVal=0.01,            
-        farVal=20,               
-        physicsClientId=physicsClientId
-    )
-
-    width, height, rgbImg, depthImg, segImg = p.getCameraImage(
-        width=width, height=height,
-        viewMatrix=viewMatrix,
-        projectionMatrix=projectionMatrix,
-        physicsClientId=physicsClientId
-    )
-    
-    return width, height, rgbImg, depthImg, segImg
 
 class Camera(object):
     def __init__(self):
@@ -106,24 +69,7 @@ class fixedCamera(Camera):
 
         return projectionMatrix
 
-    def getImg(self):
-        # get images
-        viewMatrix = self.getViewMatrix()
-        projectionMatrix = self.getProjectionMatrix()
-        width, height, rgbImg, depthImg, segImg =\
-             p.getCameraImage(self.width, self.height,
-                            viewMatrix,
-                            projectionMatrix,
-                            # lightDirection=[-0.15, 0.05, 6],
-                            # lightDirection=[0, 0, 10],
-                            physicsClientId=self.physicsClientId)
-        # postprocess
-        depth = self.far * self.near / (self.far - (self.far - self.near) * depthImg)
-        rgb = np.reshape(rgbImg, [height, width, 4])
-        rgb = rgb[:, :, :3]
-        depth = np.reshape(depth, [height, width])
 
-        return rgb, depth
 
     def getIntrinsic(self):
 

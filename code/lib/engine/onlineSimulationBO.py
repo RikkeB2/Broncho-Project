@@ -20,6 +20,8 @@ from pyrender import IntrinsicsCamera, PerspectiveCamera,\
                      MetallicRoughnessMaterial,\
                      Primitive, Mesh, Node, Scene,\
                      Viewer, OffscreenRenderer, RenderFlags
+import open3d as o3d
+import threading
 
 from .camera import fixedCamera
 from .keyBoardEvents import getDirectionBO, getAdditionBO
@@ -103,6 +105,23 @@ def dcm2quat(R):
 
     return np.array([q1, q2, q3, q0])
 
+def visualize_pointcloud(depth_img, intrinsic_matrix, depth2pointcloud_func):
+    pcd = o3d.geometry.PointCloud()
+    vis = o3d.visualization.Visualizer()
+    vis.create_window()
+
+    points = depth2pointcloud_func(depth_img, intrinsic_matrix)
+    pcd.points = o3d.utility.Vector3dVector(points)
+    vis.add_geometry(pcd)
+
+    while True:
+        vis.update_geometry(pcd)
+        vis.poll_events()
+        vis.update_renderer()
+        if not vis.poll_events():
+            break
+
+    vis.destroy_window()
 
 class onlineSimulationWithNetwork(object):
 
@@ -209,7 +228,7 @@ class onlineSimulationWithNetwork(object):
 
         # Generate new path in each step
         reader = vtk.vtkPolyDataReader()
-        reader.SetFileName(self.airway_model_dir) #modelo do pulmao oco
+        reader.SetFileName(self.airway_model_dir) #modelo do pulmao oco (Hollow lung model)
         reader.Update()
         self.vtkdata = reader.GetOutput()
         self.targetPoint = centerlineArray[0]
@@ -263,6 +282,25 @@ class onlineSimulationWithNetwork(object):
                 return False
             if centerline_length > distance:
                 return cur_index
+
+    def depth2pointcloud(self, depth_img, intrinsic_matrix):
+        fx = intrinsic_matrix[0, 0]
+        fy = intrinsic_matrix[1, 1]
+        cx = intrinsic_matrix[0, 2]
+        cy = intrinsic_matrix[1, 2]
+        H, W = depth_img.shape
+
+        x, y = np.meshgrid(np.arange(W), np.arange(H))
+        z = depth_img / 255.0  # Assuming depth values are normalized to [0, 1]
+        x = (x - cx) * z / fx
+        y = (y - cy) * z / fy
+        points = np.stack((x, y, z), axis=-1).reshape(-1, 3)
+        return points
+    
+    def runPointcloud(self, depth_img, intrinsic_matrix):
+        # Create and start a new thread for point cloud visualization
+        visualization_thread = threading.Thread(target=visualize_pointcloud, args=(depth_img, intrinsic_matrix, self.depth2pointcloud))
+        visualization_thread.start()
 
 
     def get_images(self, yaw, pitch, t, pos_vector):
@@ -407,7 +445,6 @@ class onlineSimulationWithNetwork(object):
 
         return rgb_img, depth_img, rgb_img_ori
 
-
     def runManual(self, args):
 
         count = len(self.centerlineArray) - 1
@@ -480,6 +517,13 @@ class onlineSimulationWithNetwork(object):
 
             # Get Images from current pose
             rgb_img, depth_img, rgb_img_ori =  self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
+
+            # Visualize the point cloud
+            intrinsic_matrix = np.array([[175 / 1.008, 0, 100],
+                                        [0, 175 / 1.008, 100],
+                                        [0, 0, 1]])
+
+            self.runPointcloud(depth_img, intrinsic_matrix)
 
             # Get the nearest point of the center line to the current one
             nearest_original_centerline_point_sim_cor_index = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()

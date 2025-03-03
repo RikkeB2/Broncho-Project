@@ -465,6 +465,31 @@ class onlineSimulationWithNetwork(object):
         args.human = True
         direction = np.array([0, 0, 0])  
 
+        # Initialize PointCloudGenerator
+        # Define the intrinsic matrix of the camera
+        intrinsic_matrix = np.array([[175 / 1.008, 0, 100],
+                                    [0, 175 / 1.008, 100],
+                                    [0, 0, 1]])
+
+        # Create an instance of the PointCloudGenerator with the intrinsic matrix
+        point_cloud_generator = PointCloudGenerator(intrinsic_matrix)
+
+        # Define a generator function to yield depth images continuously
+        def depth_img_generator():
+            while True:
+                # Step the simulation to get the next frame
+                p.stepSimulation()
+                # Get the RGB and depth images from the current camera pose
+                rgb_img, depth_img, rgb_img_ori = self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
+                # Yield the depth image to the generator
+                yield depth_img
+
+        # Start point cloud visualization in a separate thread
+        # Create a new thread to run the point cloud generator
+        point_cloud_thread = threading.Thread(target=point_cloud_generator.run, args=(depth_img_generator(),))
+        # Start the thread
+        point_cloud_thread.start()
+
         while 1:
             tic = time.time()
             p.stepSimulation()
@@ -654,6 +679,19 @@ class onlineSimulationWithNetwork(object):
 
         #Initialize robot
         m_robot = BroncoRobot1()
+
+        # Initialize PointCloudGenerator
+        point_cloud_generator = PointCloudGenerator(intrinsic_matrix)
+
+        def depth_img_generator():
+            while True:
+                p.stepSimulation()
+                rgb_img, depth_img, rgb_img_ori = self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
+                yield depth_img
+
+        # Start point cloud visualization in a separate thread
+        point_cloud_thread = threading.Thread(target=point_cloud_generator.run, args=(depth_img_generator(),))
+        point_cloud_thread.start()
 
         while 1:
             tic = time.time()

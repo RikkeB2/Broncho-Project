@@ -2,11 +2,12 @@ import open3d as o3d
 import numpy as np
 
 class PointCloudGenerator:
-    def __init__(self, intrinsic_matrix, update_interval=10):
+    def __init__(self, intrinsic_matrix, update_interval=50):
         self.intrinsic_matrix = intrinsic_matrix
         self.update_interval = update_interval
         self.update_count = 0  # Count how many times the point cloud has been updated
         self.pcd = o3d.geometry.PointCloud()  # The accumulated point cloud (without visualization)
+        self.vis = None  # The Open3D visualization window
 
     def depth2pointcloud(self, depth_img2):
         """Convert a depth image to a 3D point cloud using correct scaling."""
@@ -70,8 +71,26 @@ class PointCloudGenerator:
             return
         
         print(f"Saving point cloud to {filename}...")
-        o3d.io.write_point_cloud(filename, self.pcd)
-        print("Point cloud saved.")
+
+        # Check data type
+        points = np.asarray(self.pcd.points)
+        print(f"Point cloud data type: {points.dtype}")
+
+        # Ensure data type is float32 or float64
+        if points.dtype != np.float32 and points.dtype != np.float64:
+            print("Converting point cloud data to np.float32")
+            points = points.astype(np.float32)
+            self.pcd.points = o3d.utility.Vector3dVector(points)
+
+        try:
+            o3d.io.write_point_cloud(filename, self.pcd)
+            print("Point cloud saved.")
+        except Exception as e:
+            print(f"Error saving point cloud: {e}")
+
+        # Save as NumPy array for debugging
+        np.save(filename + ".npy", points)
+        print(f"Point cloud saved as NumPy array to {filename}.npy")
 
     def save_copy(self, filename):
         """Save a copy of the point cloud for debugging."""
@@ -79,15 +98,34 @@ class PointCloudGenerator:
             print("Point cloud is empty! Nothing to save.")
             return
         
-        print(f"Saving debug point cloud to {filename}...")
-        o3d.io.write_point_cloud(filename, self.pcd)
-        print("Debug point cloud saved.")
+       # print(f"Saving debug point cloud to {filename}...")
+        #o3d.io.write_point_cloud(filename, self.pcd)
+        #print("Debug point cloud saved.")
 
     def show(self):
-        """Visualize the point cloud only when called."""
-        if len(self.pcd.points) == 0:
-            print("Point cloud is empty! No visualization.")
-            return
-        
-        print("Displaying the point cloud...")
-        o3d.visualization.draw_geometries([self.pcd])  # Show the accumulated point cloud
+        """Open Open3D visualization and block until closed."""
+        if self.vis is None:
+            self.vis = o3d.visualization.VisualizerWithKeyCallback()
+            self.vis.create_window()
+            self.vis.add_geometry(self.pcd)
+
+            # Register key callbacks
+            self.vis.register_key_callback(256, self.close_visualizer)  # ESC key
+            self.vis.register_key_callback(99, self.close_visualizer)   # 'C' key
+
+            print("Opened Open3D visualization window. Press ESC or C to close.")
+
+        # **Block execution until the user closes the window**
+        self.vis.run()  
+        self.close_visualizer()  # Ensure proper cleanup
+   
+    def close_visualizer(self, vis=None):
+        """Close the Open3D visualization window and restore OpenGL context."""
+        if self.vis is not None:
+            self.vis.destroy_window()
+            self.vis = None
+            print("Closed Open3D visualization window.")
+
+            # **RESTORE OpenGL context for pyrender**
+            gl.glFlush()  # Ensures OpenGL commands finish before pyrender resumes
+            print("OpenGL context restored.")

@@ -51,7 +51,7 @@ if __name__ == '__main__':
             print(count)
 
             # Save the point cloud periodically
-            if count % 10 == 0:  # Adjust the frequency as needed
+            if count % 50 == 0:  # Adjust the frequency as needed
                 print(f"Saving intermediate point cloud at step {count}")
                 print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
                 point_cloud_generator.save_pc(os.path.join(pointclouds_dir, f"intermediate_point_cloud_{count}.pcd"))

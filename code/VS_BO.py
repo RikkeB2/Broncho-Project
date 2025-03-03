@@ -7,6 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 
 from lib.engine.onlineSimulationBO import onlineSimulationWithNetwork as onlineSimulatorBO
+from lib.engine.pointCloudGenerator import PointCloudGenerator
 
 from scipy.io import savemat
 
@@ -33,15 +34,34 @@ if __name__ == '__main__':
 
     global_batch_count = 0
     count = 0
+
+    # Ensure the pointclouds directory exists
+    pointclouds_dir = "./pointclouds"
+    if not os.path.exists(pointclouds_dir):
+        os.makedirs(pointclouds_dir)
+
+    # Initialize PointCloudGenerator
+    intrinsic_matrix = np.array([[175 / 1.008, 0, 100],
+                                 [0, 175 / 1.008, 100],
+                                 [0, 0, 1]])
+    point_cloud_generator = PointCloudGenerator(intrinsic_matrix)
         
     for online_test_centerline_name in online_test_centerline_names_list:
         simulator = onlineSimulatorBO(args.dataset_dir, online_test_centerline_name, renderer='pyrender', training=False)
         path_trajectoryT, path_trajectoryR, path_centerline_ratio_list, originalCenterlineArray, safe_distance, path_jointvel, path_joint \
-            = simulator.runVS2(args)
+            = simulator.runVS2(args, point_cloud_generator)
         
         count = count + 1
         print(count)
 
-        mdic = {"path_trajectoryT": path_trajectoryT, "path_trajectoryR": path_trajectoryR, "path_centerline_ratio_list": path_centerline_ratio_list, \
-                "originalCenterlineArray":originalCenterlineArray, "path_jointvel":path_jointvel, "path_joint":path_joint}
-        savemat("./results/vsGT" + str(count) + ".mat", mdic)
+        # Save the point cloud periodically
+        if count % 50 == 0:  # Adjust the frequency as needed
+                print(f"Saving intermediate point cloud at step {count}")
+                print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
+                point_cloud_generator.save_pc(os.path.join(pointclouds_dir, f"intermediate_point_cloud_{count}.pcd"))
+                print(f"Intermediate point cloud saved at step {count}")
+
+
+       # mdic = {"path_trajectoryT": path_trajectoryT, "path_trajectoryR": path_trajectoryR, "path_centerline_ratio_list": path_centerline_ratio_list, \
+                #"originalCenterlineArray":originalCenterlineArray, "path_jointvel":path_jointvel, "path_joint":path_joint}
+        #savemat("./results/vsGT" + str(count) + ".mat", mdic)

@@ -497,25 +497,25 @@ class onlineSimulationWithNetwork(object):
             print(f"Depth Image Sample: {depth_img2[100, 100]}")  # Check the value at a specific pixel
             print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
 
-            # Update point cloud every 10 frames
+            #  Update point cloud every 10 frames
             frame_count += 1
-            if frame_count % 10 == 0:
-                # Check if depth_img2 is valid before updating the point cloud
+            if frame_count % 50 == 0:
                 if depth_img2 is not None and np.any(depth_img2 > 0):
                     point_cloud_generator.update_point_cloud(depth_img2)
-                    
-                    # Visualize the point cloud (optional)
-                    if args.human:  # Only visualize if in human mode
-                        point_cloud_generator.show()    
 
-                    # Save the point cloud periodically
-                    print(f"Saving intermediate point cloud at step {frame_count}")
-                    print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
-                    point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
-                    print(f"Intermediate point cloud saved at step {frame_count}")
+                    # Only visualize & save at **certain intervals**
+                    if frame_count % 100 == 0:  # Adjust as needed
+                        print(f"Saving intermediate point cloud at step {frame_count}")
+                        point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
+                        print(f"Intermediate point cloud saved at step {frame_count}")
+
                 else:
                     print("Depth image is invalid. Skipping point cloud update and save.")
 
+            # Visualization step (outside the loop)
+            if args.human and frame_count % 400 == 0:  # Show only every 100 frames
+                print("Showing point cloud... Press ESC or C to close.")
+                point_cloud_generator.show()  # Blocks execution until user closes the window
 
             # Get the nearest point of the center line to the current one
             nearest_original_centerline_point_sim_cor_index = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()
@@ -623,11 +623,6 @@ class onlineSimulationWithNetwork(object):
 
             cv2.imshow("Image", m_image)
 
-            # Check for 'c' key press to visualize the point cloud
-            if cv2.waitKey(1) & 0xFF == ord('c'):
-                point_cloud_generator.show()
-
-
             cv2.waitKey(5)
         
         # Save the final point cloud after the loop
@@ -645,7 +640,7 @@ class onlineSimulationWithNetwork(object):
         return path_trajectoryT, path_trajectoryR, path_centerline_ratio_list, self.originalCenterlineArray, safe_distance_list
 
 
-    def runVS2(self, args):
+    def runVS2(self, args, point_cloud_generator):
         # Pitch and Roll    
         count = len(self.centerlineArray) - 1
 
@@ -700,18 +695,7 @@ class onlineSimulationWithNetwork(object):
         #Initialize robot
         m_robot = BroncoRobot1()
 
-        # Initialize PointCloudGenerator
-        point_cloud_generator = PointCloudGenerator(intrinsic_matrix)
-
-        def depth_img_generator():
-            while True:
-                p.stepSimulation()
-                rgb_img, depth_img, rgb_img_ori = self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
-                yield depth_img
-
-        # Start point cloud visualization in a separate thread
-        point_cloud_thread = threading.Thread(target=point_cloud_generator.run, args=(depth_img_generator(),))
-        point_cloud_thread.start()
+        frame_count = 0
 
         while 1:
             tic = time.time()
@@ -743,7 +727,32 @@ class onlineSimulationWithNetwork(object):
             direction = np.array(direction)       
             
             # Get Images from current pose
-            rgb_img, depth_img, rgb_img_ori =  self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
+            rgb_img, depth_img, rgb_img_ori, depth_img2 =  self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
+
+            print(f"Depth Image Shape: {depth_img2.shape}")
+            print(f"Depth Image Sample: {depth_img2[100, 100]}")  # Check the value at a specific pixel
+            print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
+
+            #  Update point cloud every 10 frames
+            frame_count += 1
+            if frame_count % 50 == 0:
+                if depth_img2 is not None and np.any(depth_img2 > 0):
+                    point_cloud_generator.update_point_cloud(depth_img2)
+
+                    # Only visualize & save at **certain intervals**
+                    if frame_count % 100 == 0:  # Adjust as needed
+                        print(f"Saving intermediate point cloud at step {frame_count}")
+                        point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
+                        print(f"Intermediate point cloud saved at step {frame_count}")
+
+                else:
+                    print("Depth image is invalid. Skipping point cloud update and save.")
+
+            # Visualization step (outside the loop)
+            if args.human and frame_count % 400 == 0:  # Show only every 100 frames
+                print("Showing point cloud... Press ESC or C to close.")
+                point_cloud_generator.show()  # Blocks execution until user closes the window
+
 
             # Get the nearest point of the center line to the current one
             nearest_original_centerline_point_sim_cor_index = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()
@@ -816,6 +825,15 @@ class onlineSimulationWithNetwork(object):
             path_joint.append(m_nextvalues)
 
             cv2.waitKey(5)
+
+        # Save the final point cloud after the loop
+        print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
+        if len(point_cloud_generator.pcd.points) > 0:
+            print("Saving final point cloud...")
+            point_cloud_generator.save_pc(os.path.join("pointclouds", "final_point_cloud.pcd"))
+            print("Final point cloud saved.")
+        else:
+            print("Point cloud is empty. Nothing to save.")
         
         p.disconnect()
         self.r.delete()

@@ -1,59 +1,93 @@
 import open3d as o3d
-import time
 import numpy as np
 
 class PointCloudGenerator:
-    def __init__(self, intrinsic_matrix):
-        # Initialize the point cloud generator with the camera's intrinsic matrix
+    def __init__(self, intrinsic_matrix, update_interval=10):
         self.intrinsic_matrix = intrinsic_matrix
-        self.vis = o3d.visualization.Visualizer()  # Create a visualizer object
-        self.vis.create_window()  # Create a window for visualization
-        self.pcd = o3d.geometry.PointCloud()  # Create an empty point cloud object
-        self.vis.add_geometry(self.pcd)  # Add the point cloud to the visualizer
+        self.update_interval = update_interval
+        self.update_count = 0  # Count how many times the point cloud has been updated
+        self.pcd = o3d.geometry.PointCloud()  # The accumulated point cloud (without visualization)
 
-    def depth2pointcloud(self, depth_img):
-        # Convert a depth image to a point cloud
-        H, W = depth_img.shape  # Get the height and width of the depth image
-        fx = self.intrinsic_matrix[0, 0]  # Focal length in x direction
-        fy = self.intrinsic_matrix[1, 1]  # Focal length in y direction
-        cx = self.intrinsic_matrix[0, 2]  # Principal point x-coordinate
-        cy = self.intrinsic_matrix[1, 2]  # Principal point y-coordinate
+    def depth2pointcloud(self, depth_img2):
+        """Convert a depth image to a 3D point cloud using correct scaling."""
+        H, W = depth_img2.shape
+        fx = self.intrinsic_matrix[0, 0]
+        fy = self.intrinsic_matrix[1, 1]
+        cx = self.intrinsic_matrix[0, 2]
+        cy = self.intrinsic_matrix[1, 2]
 
-        # Create a grid of (x, y) coordinates
         x = np.linspace(0, W - 1, W)
         y = np.linspace(0, H - 1, H)
         xv, yv = np.meshgrid(x, y)
-        zv = depth_img  # Depth values
+        zv = depth_img2
 
-        # Convert depth image to 3D points
+        # Debugging: Print depth values
+        print("Depth values (first 5):", zv.flatten()[:5])
+
         x = (xv - cx) * zv / fx
         y = (yv - cy) * zv / fy
         z = zv
 
-        # Stack the x, y, z coordinates into a single array
         points = np.stack((x, y, z), axis=-1).reshape(-1, 3)
+
+        # Debugging: Print first few points
+        print("Generated points shape:", points.shape)
+        print("First 5 valid points:", points[:5])  # Ensure points are being generated
+
         return points
 
-    def update_point_cloud(self, depth_img):
-        # Update the point cloud with new depth image
-        points = self.depth2pointcloud(depth_img)  # Convert depth image to point cloud
-        self.pcd.points = o3d.utility.Vector3dVector(points)  # Update the point cloud object
-        self.vis.update_geometry(self.pcd)  # Update the visualizer with the new point cloud
-        self.vis.poll_events()  # Process GUI events for the visualizer
-        self.vis.update_renderer()  # Update the rendering
 
-    def run(self, depth_img_generator):
-        # Run the point cloud generator with a depth image generator
-        try:
-            while True:
-                depth_img = next(depth_img_generator)  # Get the next depth image
-                self.update_point_cloud(depth_img)  # Update the point cloud
-                time.sleep(0.1)  # Adjust the sleep time as needed for real-time updates
-        except StopIteration:
-            pass  # Stop if the generator is exhausted
-        finally:
-            self.vis.destroy_window()  # Destroy the visualizer window
+    def update_point_cloud(self, depth_img2):
+        """Update the stored point cloud in the background (without visualization)."""
+        print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
+
+        new_points = self.depth2pointcloud(depth_img2)
+        print(f"Number of new points generated: {len(new_points)}")  # Add this line
+
+        existing_points = np.asarray(self.pcd.points)
+
+        # Debugging: Print existing points before update
+        print(f"Existing points shape before update: {existing_points.shape}")
+
+        # Append new points instead of overwriting
+        combined_points = np.vstack((existing_points, new_points)) if existing_points.size else new_points
+        self.pcd.points = o3d.utility.Vector3dVector(combined_points)
+
+        # Debugging: Print combined points after update
+        print(f"Combined points shape after update: {combined_points.shape}")
+
+        self.update_count += 1  # Track updates
+        print(f"Updated point cloud {self.update_count} times.")
+        print(f"Point cloud updated. Current total points: {len(self.pcd.points)}")
+
+        # Save a copy of the point cloud after each update for debugging
+        self.save_copy(f"debug_point_cloud_{self.update_count}.pcd")
 
     def save_pc(self, filename):
-        # Save the current point cloud to a file
+        """Save the accumulated point cloud to a file."""
+        if len(self.pcd.points) == 0:
+            print("Point cloud is empty! Nothing to save.")
+            return
+        
+        print(f"Saving point cloud to {filename}...")
         o3d.io.write_point_cloud(filename, self.pcd)
+        print("Point cloud saved.")
+
+    def save_copy(self, filename):
+        """Save a copy of the point cloud for debugging."""
+        if len(self.pcd.points) == 0:
+            print("Point cloud is empty! Nothing to save.")
+            return
+        
+        print(f"Saving debug point cloud to {filename}...")
+        o3d.io.write_point_cloud(filename, self.pcd)
+        print("Debug point cloud saved.")
+
+    def show(self):
+        """Visualize the point cloud only when called."""
+        if len(self.pcd.points) == 0:
+            print("Point cloud is empty! No visualization.")
+            return
+        
+        print("Displaying the point cloud...")
+        o3d.visualization.draw_geometries([self.pcd])  # Show the accumulated point cloud

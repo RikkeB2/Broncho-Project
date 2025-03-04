@@ -513,9 +513,9 @@ class onlineSimulationWithNetwork(object):
                     print("Depth image is invalid. Skipping point cloud update and save.")
 
             # Visualization step (outside the loop)
-            if args.human and frame_count % 400 == 0:  # Show only every 100 frames
-                print("Showing point cloud... Press ESC or C to close.")
-                point_cloud_generator.show()  # Blocks execution until user closes the window
+            #if args.human and frame_count % 400 == 0:  # Show only every 100 frames
+               # print("Showing point cloud... Press ESC or C to close.")
+                #point_cloud_generator.show()  # Blocks execution until user closes the window
 
             # Get the nearest point of the center line to the current one
             nearest_original_centerline_point_sim_cor_index = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()
@@ -749,9 +749,9 @@ class onlineSimulationWithNetwork(object):
                     print("Depth image is invalid. Skipping point cloud update and save.")
 
             # Visualization step (outside the loop)
-            if args.human and frame_count % 400 == 0:  # Show only every 100 frames
-                print("Showing point cloud... Press ESC or C to close.")
-                point_cloud_generator.show()  # Blocks execution until user closes the window
+            #if args.human and frame_count % 400 == 0:  # Show only every 100 frames
+                #print("Showing point cloud... Press ESC or C to close.")
+                #point_cloud_generator.show()  # Blocks execution until user closes the window
 
 
             # Get the nearest point of the center line to the current one

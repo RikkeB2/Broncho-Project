@@ -39,11 +39,11 @@ class PointCloudGenerator:
 
 
     def update_point_cloud(self, depth_img2):
-        """Update the stored point cloud in the background (without visualization)."""
+        """Update the stored point cloud and ensure it is properly formatted."""
         print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
 
         new_points = self.depth2pointcloud(depth_img2)
-        print(f"Number of new points generated: {len(new_points)}")  # Add this line
+        print(f"Number of new points generated: {len(new_points)}")
 
         existing_points = np.asarray(self.pcd.points)
 
@@ -52,17 +52,17 @@ class PointCloudGenerator:
 
         # Append new points instead of overwriting
         combined_points = np.vstack((existing_points, new_points)) if existing_points.size else new_points
+
+        # **Force correct data type for Open3D**
+        combined_points = combined_points.astype(np.float32)
+
         self.pcd.points = o3d.utility.Vector3dVector(combined_points)
 
         # Debugging: Print combined points after update
         print(f"Combined points shape after update: {combined_points.shape}")
+        print(f"Point cloud now contains {len(self.pcd.points)} points.")
 
         self.update_count += 1  # Track updates
-        print(f"Updated point cloud {self.update_count} times.")
-        print(f"Point cloud updated. Current total points: {len(self.pcd.points)}")
-
-        # Save a copy of the point cloud after each update for debugging
-        self.save_copy(f"debug_point_cloud_{self.update_count}.pcd")
 
     def save_pc(self, filename):
         """Save the accumulated point cloud to a file."""
@@ -72,25 +72,22 @@ class PointCloudGenerator:
         
         print(f"Saving point cloud to {filename}...")
 
-        # Check data type
-        points = np.asarray(self.pcd.points)
-        print(f"Point cloud data type: {points.dtype}")
+        # **Force Open3D to update its internal point cloud object**
+        self.pcd.points = o3d.utility.Vector3dVector(np.asarray(self.pcd.points).astype(np.float32))
 
-        # Ensure data type is float32 or float64
-        if points.dtype != np.float32 and points.dtype != np.float64:
-            print("Converting point cloud data to np.float32")
-            points = points.astype(np.float32)
-            self.pcd.points = o3d.utility.Vector3dVector(points)
+        # Debugging: Check if Open3D recognizes the points
+        print(f"Final point count before saving: {len(self.pcd.points)}")
 
         try:
             o3d.io.write_point_cloud(filename, self.pcd)
-            print("Point cloud saved.")
+            print("Point cloud saved successfully.")
         except Exception as e:
             print(f"Error saving point cloud: {e}")
 
         # Save as NumPy array for debugging
-        np.save(filename + ".npy", points)
-        print(f"Point cloud saved as NumPy array to {filename}.npy")
+        np.save(filename + ".npy", np.asarray(self.pcd.points))
+        print(f"Point cloud also saved as NumPy array to {filename}.npy")
+
 
     def save_copy(self, filename):
         """Save a copy of the point cloud for debugging."""

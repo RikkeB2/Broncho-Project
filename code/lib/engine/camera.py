@@ -1,5 +1,6 @@
 import pybullet as p
 import numpy as np
+import os
 
 
 class Camera(object):
@@ -14,6 +15,12 @@ class Camera(object):
 
     def getImg(self):
         pass
+
+    def getOrientation(self):
+        return self.yaw, self.pitch, self.roll
+
+    def getPosition(self):
+        return self.targetPos
 
 
 class fixedCamera(Camera):
@@ -47,6 +54,9 @@ class fixedCamera(Camera):
         self.width = width
         self.height = height
 
+        self.previous_position = self.getPosition()
+        self.frame_count = 0
+
     def getViewMatrix(self):
 
         viewMatrix = self.p.computeViewMatrixFromYawPitchRoll(
@@ -68,8 +78,6 @@ class fixedCamera(Camera):
         )
 
         return projectionMatrix
-
-
 
     def getIntrinsic(self):
 
@@ -104,6 +112,12 @@ class fixedCamera(Camera):
 
         return self.visualize()
 
+    def calculateTranslation(self):
+        current_position = self.getPosition()
+        translation = np.array(current_position) - np.array(self.previous_position)
+        self.previous_position = current_position
+        return translation
+
     def visualize(self):
 
         # self.p.configureDebugVisualizer(self.p.COV_ENABLE_GUI, 1, lightPosition=[0, 0, 4])
@@ -134,6 +148,19 @@ class fixedCamera(Camera):
         rgbImg = np.reshape(rgbImg, [200,200,4])
         depthImg = np.reshape(depthImg, [200,200])
         segImg = np.reshape(segImg, [200,200])
+
+        # Print the current orientation
+        yaw, pitch, roll = self.getOrientation()
+        print(f"Yaw: {yaw}, Pitch: {pitch}, Roll: {roll}")
+
+        # Calculate and save translation every 100 timesteps
+        if self.frame_count % 100 == 0:
+            translation = self.calculateTranslation()
+            with open("translation_log.txt", "a") as file:
+                file.write(f"Translation: {translation}\n")
+
+        self.frame_count += 1
+
         return rgbImg, depthImg, segImg
 
 
@@ -167,6 +194,9 @@ class movingCamera(Camera):
 
         self.width = width
         self.height = height
+
+        self.previous_position = self.getPosition()
+        self.frame_count = 0
 
     def getViewMatrix(self):
 
@@ -230,11 +260,25 @@ class movingCamera(Camera):
 
         self.visualize()
 
+    def calculateTranslation(self):
+        current_position = self.getPosition()
+        translation = np.array(current_position) - np.array(self.previous_position)
+        self.previous_position = current_position
+        return translation
+
     def visualize(self):
 
         # self.p.configureDebugVisualizer(self.p.COV_ENABLE_GUI, 1, lightPosition=[0, 0, 4])
         self.p.resetDebugVisualizerCamera(self.dis, self.yaw, self.pitch, self.targetPos)
 
+        # Print the current orientation
+        yaw, pitch, roll = self.getOrientation()
+        print(f"Yaw: {yaw}, Pitch: {pitch}, Roll: {roll}")
 
+        # Calculate and save translation every 100 timesteps
+        if self.frame_count % 100 == 0:
+            translation = self.calculateTranslation()
+            with open("translation_log.txt", "a") as file:
+                file.write(f"Translation: {translation}\n")
 
-
+        self.frame_count += 1

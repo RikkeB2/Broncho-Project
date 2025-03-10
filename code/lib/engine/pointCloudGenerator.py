@@ -1,5 +1,7 @@
 import open3d as o3d
 import numpy as np
+import os
+from scipy.spatial.transform import Rotation as R
 
 class PointCloudGenerator:
     def __init__(self, intrinsic_matrix, update_interval=50):
@@ -37,8 +39,24 @@ class PointCloudGenerator:
 
         return points
 
+    def read_translation_log(self, log_file_path):
+        """Read the translation log file and return the translations."""
+        translations = []
+        with open(log_file_path, "r") as file:
+            for line in file:
+                if line.startswith("Translation:"):
+                    translation = np.fromstring(line[len("Translation: "):].strip()[1:-1], sep=' ')
+                    translations.append(translation)
+        return translations
 
-    def update_point_cloud(self, depth_img2):
+    def apply_transformations(self, points, transformations):
+        """Apply the transformations to the points."""
+        transformed_points = points.copy()
+        for transformation in transformations:
+            transformed_points = (transformation @ transformed_points.T).T
+        return transformed_points
+
+    def update_point_cloud(self, depth_img2, log_file_path):
         """Update the stored point cloud and ensure it is properly formatted."""
         print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
 
@@ -49,6 +67,12 @@ class PointCloudGenerator:
 
         # Debugging: Print existing points before update
         print(f"Existing points shape before update: {existing_points.shape}")
+
+        # Read transformations from log file
+        transformations = self.read_transformations_log(log_file_path)
+
+        # Apply transformations to new points
+        new_points = self.apply_transformations(new_points, transformations)
 
         # Append new points instead of overwriting
         combined_points = np.vstack((existing_points, new_points)) if existing_points.size else new_points
@@ -88,7 +112,6 @@ class PointCloudGenerator:
         np.save(filename + ".npy", np.asarray(self.pcd.points))
         print(f"Point cloud also saved as NumPy array to {filename}.npy")
 
-
     def save_copy(self, filename):
         """Save a copy of the point cloud for debugging."""
         if len(self.pcd.points) == 0:
@@ -122,3 +145,32 @@ class PointCloudGenerator:
             self.vis.destroy_window()
             self.vis = None
             print("Closed Open3D visualization window.")
+
+    def read_transformations_log(self, log_file_path):
+        """Read the translation log file and return the transformations as rotation matrices."""
+        transformations = []
+        with open(log_file_path, "r") as file:
+            for line in file:
+                if line.startswith("Translation:"):
+                    translation = np.fromstring(line[len("Translation: "):].strip()[1:-1], sep=' ')
+                    # Assuming the translation values are roll, pitch, yaw
+                    rotation_matrix = R.from_euler('xyz', translation).as_matrix()
+                    transformations.append(rotation_matrix)
+        return transformations
+
+    def generate_point_cloud_from_transformations(self, transformations):
+        """Generate a point cloud from the transformations."""
+        points = []
+        for transformation in transformations:
+            # Generate a point at the origin and apply the transformation
+            point = np.array([0, 0, 0])
+            transformed_point = transformation @ point
+            points.append(transformed_point)
+        return np.array(points)
+
+    def create_point_cloud_from_log(self, log_file_path):
+        """Create a point cloud from the translation log."""
+        transformations = self.read_transformations_log(log_file_path)
+        points = self.generate_point_cloud_from_transformations(transformations)
+        self.pcd.points = o3d.utility.Vector3dVector(points.astype(np.float32))
+        print(f"Generated point cloud with {len(points)} points from log.")

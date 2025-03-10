@@ -767,25 +767,19 @@ class onlineSimulationWithNetwork(object):
             print(f"Depth Image Sample: {depth_img2[100, 100]}")  # Check the value at a specific pixel
             print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
 
-            #  Update point cloud every 10 frames
+            # Update point cloud and log translations every 100 frames
             frame_count += 1
-            if frame_count % 50 == 0:
+            if frame_count % 100 == 0:
                 if depth_img2 is not None and np.any(depth_img2 > 0):
-                    point_cloud_generator.update_point_cloud(depth_img2)
+                    point_cloud_generator.update_point_cloud(depth_img2, "translation_log.txt")
 
-                    # Only visualize & save at **certain intervals**
-                    if frame_count % 100 == 0:  # Adjust as needed
-                        print(f"Saving intermediate point cloud at step {frame_count}")
-                        point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
-                        print(f"Intermediate point cloud saved at step {frame_count}")
+                    # Save intermediate point cloud
+                    print(f"Saving intermediate point cloud at step {frame_count}")
+                    point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
+                    print(f"Intermediate point cloud saved at step {frame_count}")
 
                 else:
                     print("Depth image is invalid. Skipping point cloud update and save.")
-
-            # Visualization step (outside the loop)
-            #if args.human and frame_count % 400 == 0:  # Show only every 100 frames
-                #print("Showing point cloud... Press ESC or C to close.")
-                #point_cloud_generator.show()  # Blocks execution until user closes the window
 
 
             # Get the nearest point of the center line to the current one

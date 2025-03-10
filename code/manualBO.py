@@ -36,9 +36,10 @@ if __name__ == '__main__':
         os.makedirs(pointclouds_dir)
 
     # Initialize PointCloudGenerator
-    intrinsic_matrix = np.array([[175 / 1.008, 0, 100],
-                                 [0, 175 / 1.008, 100],
-                                 [0, 0, 1]])
+    intrinsic_matrix = np.array([[236.3918, 0, 237.2150],
+                                [0, 237.3016, 237.2665],
+                                [0, 0, 1]])
+    
     point_cloud_generator = PointCloudGenerator(intrinsic_matrix)
 
     try:
@@ -66,6 +67,6 @@ if __name__ == '__main__':
         if len(point_cloud_generator.pcd.points) > 0:
             print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
             point_cloud_generator.save_pc(final_path)
-            print(f"✅ Final point cloud saved at {final_path}.")
+            print(f"Final point cloud saved at {final_path}.")
         else:
-            print("❌ Point cloud is empty. Nothing to save.")
+            print("Point cloud is empty. Nothing to save.")

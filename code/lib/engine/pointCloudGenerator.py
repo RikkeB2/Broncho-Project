@@ -12,10 +12,10 @@ class PointCloudGenerator:
     def depth2pointcloud(self, depth_img2):
         """Convert a depth image to a 3D point cloud using correct scaling."""
         H, W = depth_img2.shape
-        fx = self.intrinsic_matrix[0, 0]
-        fy = self.intrinsic_matrix[1, 1]
-        cx = self.intrinsic_matrix[0, 2]
-        cy = self.intrinsic_matrix[1, 2]
+        fx = self.intrinsic_matrix[0, 0] #Focal length in x direction
+        fy = self.intrinsic_matrix[1, 1] #Focal length in y direction
+        cx = self.intrinsic_matrix[0, 2] #Principal point in x direction
+        cy = self.intrinsic_matrix[1, 2] #Principal point in y direction
 
         x = np.linspace(0, W - 1, W)
         y = np.linspace(0, H - 1, H)
@@ -122,7 +122,3 @@ class PointCloudGenerator:
             self.vis.destroy_window()
             self.vis = None
             print("Closed Open3D visualization window.")
-
-            # **RESTORE OpenGL context for pyrender**
-            gl.glFlush()  # Ensures OpenGL commands finish before pyrender resumes
-            print("OpenGL context restored.")

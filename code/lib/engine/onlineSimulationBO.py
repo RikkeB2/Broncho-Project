@@ -600,10 +600,9 @@ class onlineSimulationWithNetwork(object):
             m_nextgtposSmooth = np.mean(restSmoothedCenterlineArray[index_form_dis2-1:index_form_dis], axis=0) 
 
             # Get the direction to follow, getting the point in front in the trajectory path
-            intrinsic_matrix = np.array([[175 / 1.008, 0, 100],
-                                    [0, 175 / 1.008, 100],
-                                    [0, 0, 1]])
-
+            intrinsic_matrix = np.array([[236.3918, 0, 237.2150],
+                                        [0, 237.3016, 237.2665],
+                                        [0, 0, 1]])
             m_image = rgb_img.copy()
 
             pose = np.identity(4)
@@ -688,9 +687,9 @@ class onlineSimulationWithNetwork(object):
         args.human = True
         direction = np.array([0, 0, 0]) 
 
-        intrinsic_matrix = np.array([[175 / 1.008, 0, 100],
-                        [0, 175 / 1.008, 100],
-                        [0, 0, 1]]) 
+        intrinsic_matrix = np.array([[236.3918, 0, 237.2150],
+                                        [0, 237.3016, 237.2665],
+                                        [0, 0, 1]])
 
         #Initialize robot
         m_robot = BroncoRobot1()

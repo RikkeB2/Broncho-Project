@@ -62,6 +62,11 @@ if __name__ == '__main__':
                 point_cloud_generator.save_pc(os.path.join(pointclouds_dir, f"intermediate_point_cloud_{count}.pcd"))
                 print(f"Intermediate point cloud saved at step {count}")
 
+            # Log translations every 100 timesteps
+            if count % 100 == 0:
+                with open("translation_log.txt", "a") as log_file:
+                    log_file.write(f"Step {count}: Translation - {path_trajectoryT[-1]}\n")
+
     except KeyboardInterrupt:
         print("Simulation interrupted by user.")
 

@@ -599,10 +599,30 @@ class onlineSimulationWithNetwork(object):
             #OU smooth da atual ate a proxima x 2
             m_nextgtposSmooth = np.mean(restSmoothedCenterlineArray[index_form_dis2-1:index_form_dis], axis=0) 
 
+            image_width = 200  # Or 400, or whatever the *original* image width is
+            image_height = 200
+            
             # Get the direction to follow, getting the point in front in the trajectory path
+
             intrinsic_matrix = np.array([[236.3918, 0, 237.2150],
-                                        [0, 237.3016, 237.2665],
-                                        [0, 0, 1]])
+                                    [0, 237.3016, 237.2665],
+                                    [0, 0, 1]])
+
+            target_width = 200
+            target_height = 200
+
+            original_width = 500 #estimated
+            original_height = 500 #estimated
+
+            scale_x = target_width / original_width
+            scale_y = target_height / original_height
+
+            scaled_intrinsic_matrix = np.array([
+                [intrinsic_matrix[0, 0] * scale_x, 0, intrinsic_matrix[0, 2] * scale_x],
+                [0, intrinsic_matrix[1, 1] * scale_y, intrinsic_matrix[1, 2] * scale_y],
+                [0, 0, 1]
+            ])
+
             m_image = rgb_img.copy()
 
             pose = np.identity(4)
@@ -610,10 +630,10 @@ class onlineSimulationWithNetwork(object):
             pose[:3, :3] = R_currentCam
 
             predicted_action_in_camera_cor = np.dot(np.linalg.inv(pose), [m_nextgtpos[0],m_nextgtpos[1],m_nextgtpos[2],1])[:-1]
-            predicted_action_in_image_cor = np.dot(intrinsic_matrix, predicted_action_in_camera_cor) / predicted_action_in_camera_cor[2]
+            predicted_action_in_image_cor = np.dot(scaled_intrinsic_matrix, predicted_action_in_camera_cor) / predicted_action_in_camera_cor[2]
 
             predicted_action_in_camera_cor1 = np.dot(np.linalg.inv(pose), [m_nextgtposSmooth[0],m_nextgtposSmooth[1],m_nextgtposSmooth[2],1])[:-1]
-            predicted_action_in_image_cor1 = np.dot(intrinsic_matrix, predicted_action_in_camera_cor1) / predicted_action_in_camera_cor1[2]
+            predicted_action_in_image_cor1 = np.dot(scaled_intrinsic_matrix, predicted_action_in_camera_cor1) / predicted_action_in_camera_cor1[2]
 
         
             cv2.circle(m_image, (100, 100), 3, (0, 0, 255), -1)
@@ -688,8 +708,23 @@ class onlineSimulationWithNetwork(object):
         direction = np.array([0, 0, 0]) 
 
         intrinsic_matrix = np.array([[236.3918, 0, 237.2150],
-                                        [0, 237.3016, 237.2665],
-                                        [0, 0, 1]])
+                                    [0, 237.3016, 237.2665],
+                                    [0, 0, 1]])
+
+        target_width = 200
+        target_height = 200
+
+        original_width = 500 #estimated
+        original_height = 500 #estimated
+
+        scale_x = target_width / original_width
+        scale_y = target_height / original_height
+
+        scaled_intrinsic_matrix = np.array([
+                [intrinsic_matrix[0, 0] * scale_x, 0, intrinsic_matrix[0, 2] * scale_x],
+                [0, intrinsic_matrix[1, 1] * scale_y, intrinsic_matrix[1, 2] * scale_y],
+                [0, 0, 1]
+            ])
 
         #Initialize robot
         m_robot = BroncoRobot1()
@@ -780,7 +815,7 @@ class onlineSimulationWithNetwork(object):
             m_nextgtposSmooth = np.mean(restSmoothedCenterlineArray[index_form_dis2-1:index_form_dis], axis=0) 
 
             predicted_action_in_camera_cor1 = np.dot(np.linalg.inv(pose), [m_nextgtposSmooth[0],m_nextgtposSmooth[1],m_nextgtposSmooth[2],1])[:-1]
-            predicted_action_in_image_cor1 = np.dot(intrinsic_matrix, predicted_action_in_camera_cor1) / predicted_action_in_camera_cor1[2]
+            predicted_action_in_image_cor1 = np.dot(scaled_intrinsic_matrix, predicted_action_in_camera_cor1) / predicted_action_in_camera_cor1[2]
 
             # VIsual servoing
             m_jointsVelRel, m_nextvalues = m_robot.visualservoingcontrol(predicted_action_in_image_cor1)

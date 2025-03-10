@@ -43,9 +43,13 @@ if __name__ == '__main__':
     # Initialize PointCloudGenerator
     intrinsic_matrix = np.array([[236.3918, 0, 237.2150],
                                 [0, 237.3016, 237.2665],
-                                [0, 0, 1]])
+                                [0, 0, 1]]) 
+
+     # Normalize the intrinsic matrix
+    intrinsic_matrix_normalized = intrinsic_matrix / intrinsic_matrix[2, 2]
+
     
-    point_cloud_generator = PointCloudGenerator(intrinsic_matrix)
+    point_cloud_generator = PointCloudGenerator(intrinsic_matrix_normalized)
 
     try:   
         for online_test_centerline_name in online_test_centerline_names_list:

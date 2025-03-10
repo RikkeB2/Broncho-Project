@@ -38,6 +38,16 @@ class PointCloudGenerator:
         print("First 5 valid points:", points[:5])  # Ensure points are being generated
 
         return points
+    
+    def voxel_filter(self, voxel_size=0.01):
+        """Apply voxel grid filtering to the point cloud."""
+        if len(self.pcd.points) == 0:
+            return  # Nothing to filter
+
+        print(f"Applying voxel filter with voxel size: {voxel_size}")
+        filtered_pcd = self.pcd.voxel_down_sample(voxel_size=voxel_size)
+        self.pcd = filtered_pcd
+        print(f"Point cloud after voxel filter: {len(self.pcd.points)} points")
 
     def read_translation_log(self, log_file_path):
         """Read the translation log file and return the translations."""
@@ -81,6 +91,9 @@ class PointCloudGenerator:
         combined_points = combined_points.astype(np.float32)
 
         self.pcd.points = o3d.utility.Vector3dVector(combined_points)
+
+        # Apply voxel filter
+        self.voxel_filter(voxel_size=0.002)
 
         # Debugging: Print combined points after update
         print(f"Combined points shape after update: {combined_points.shape}")

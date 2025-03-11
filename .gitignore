@@ -1,1 +1,13 @@
 code/fixed_point_cloud.pcd
+code/pointclouds/final_point_cloud.pcd
+code/pointclouds/final_point_cloud.pcd.npy
+code/pointclouds/fixed_point_cloud.pcd
+code/pointclouds/intermediate_point_cloud_100.pcd
+code/pointclouds/intermediate_point_cloud_100.pcd.npy
+code/pointclouds/intermediate_point_cloud_200.pcd
+code/pointclouds/intermediate_point_cloud_200.pcd.npy
+code/pointclouds/intermediate_point_cloud_300.pcd
+code/pointclouds/intermediate_point_cloud_300.pcd.npy
+code/pointclouds/intermediate_point_cloud_400.pcd
+code/pointclouds/intermediate_point_cloud_400.pcd.npy
+code/translation_log.txt

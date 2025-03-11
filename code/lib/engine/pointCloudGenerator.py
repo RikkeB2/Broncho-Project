@@ -7,9 +7,10 @@ class PointCloudGenerator:
     def __init__(self, intrinsic_matrix, update_interval=50):
         self.intrinsic_matrix = intrinsic_matrix
         self.update_interval = update_interval
-        self.update_count = 0  # Count how many times the point cloud has been updated
-        self.pcd = o3d.geometry.PointCloud()  # The accumulated point cloud (without visualization)
-        self.vis = None  # The Open3D visualization window
+        self.update_count = 0 # Count how many times the point cloud has been updated
+        self.pcd = o3d.geometry.PointCloud() # The accumulated point cloud (without visualization)
+        self.vis = None # The Open3D visualization window
+        self.previous_pcd = None # The previous point cloud for ICP
 
     def depth2pointcloud(self, depth_img2):
         """Convert a depth image to a 3D point cloud using correct scaling."""
@@ -38,12 +39,13 @@ class PointCloudGenerator:
         print("First 5 valid points:", points[:5])  # Ensure points are being generated
 
         return points
-    
+
     def voxel_filter(self, voxel_size=0.01):
         """Apply voxel grid filtering to the point cloud."""
+
         if len(self.pcd.points) == 0:
             return  # Nothing to filter
-
+        
         print(f"Applying voxel filter with voxel size: {voxel_size}")
         filtered_pcd = self.pcd.voxel_down_sample(voxel_size=voxel_size)
         self.pcd = filtered_pcd
@@ -62,58 +64,71 @@ class PointCloudGenerator:
     def apply_transformations(self, points, transformations):
         """Apply the transformations to the points."""
         transformed_points = points.copy()
+
         for transformation in transformations:
             transformed_points = (transformation @ transformed_points.T).T
         return transformed_points
 
     def update_point_cloud(self, depth_img2, log_file_path):
         """Update the stored point cloud and ensure it is properly formatted."""
-        print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
-
         new_points = self.depth2pointcloud(depth_img2)
-        print(f"Number of new points generated: {len(new_points)}")
-
         existing_points = np.asarray(self.pcd.points)
 
-        # Debugging: Print existing points before update
         print(f"Existing points shape before update: {existing_points.shape}")
 
-        # Read transformations from log file
+        # Apply the transformations from the log file
         transformations = self.read_transformations_log(log_file_path)
-
-        # Apply transformations to new points
+        
+        # Apply the transformations to the new points
         new_points = self.apply_transformations(new_points, transformations)
 
+        # Combine the existing and new points
         # Append new points instead of overwriting
         combined_points = np.vstack((existing_points, new_points)) if existing_points.size else new_points
-
+        
         # **Force correct data type for Open3D**
         combined_points = combined_points.astype(np.float32)
 
         self.pcd.points = o3d.utility.Vector3dVector(combined_points)
 
-        # Apply voxel filter
+        # ICP Implementation
+        if self.previous_pcd is not None and len(self.pcd.points) > 0 and len(self.previous_pcd.points) > 0:
+            threshold = 0.02
+            max_iteration = 200
+            reg_p2p = o3d.pipelines.registration.registration_icp(
+                self.previous_pcd, self.pcd, threshold, np.identity(4),
+                o3d.pipelines.registration.TransformationEstimationPointToPoint(),
+                o3d.pipelines.registration.ICPConvergenceCriteria(max_iteration=max_iteration)
+            )
+
+            print("ICP Fitness:", reg_p2p.fitness)
+            print("ICP Inlier RMSE:", reg_p2p.inlier_rmse)
+
+            self.pcd.transform(reg_p2p.transformation)
+            print("ICP applied.")
+
+        # Voxel filter after ICP
         self.voxel_filter(voxel_size=0.002)
 
         # Debugging: Print combined points after update
         print(f"Combined points shape after update: {combined_points.shape}")
         print(f"Point cloud now contains {len(self.pcd.points)} points.")
 
-        self.update_count += 1  # Track updates
+        self.previous_pcd = o3d.geometry.PointCloud(self.pcd)
+        self.update_count += 1
 
     def save_pc(self, filename):
         """Save the accumulated point cloud to a file."""
+
         if len(self.pcd.points) == 0:
             print("Point cloud is empty! Nothing to save.")
             return
-        
-        print(f"Saving point cloud to {filename}...")
 
-        # **Force Open3D to update its internal point cloud object**
         self.pcd.points = o3d.utility.Vector3dVector(np.asarray(self.pcd.points).astype(np.float32))
 
         # Debugging: Check if Open3D recognizes the points
         print(f"Final point count before saving: {len(self.pcd.points)}")
+
 
         try:
             o3d.io.write_point_cloud(filename, self.pcd)
@@ -125,16 +140,6 @@ class PointCloudGenerator:
         np.save(filename + ".npy", np.asarray(self.pcd.points))
         print(f"Point cloud also saved as NumPy array to {filename}.npy")
 
-    def save_copy(self, filename):
-        """Save a copy of the point cloud for debugging."""
-        if len(self.pcd.points) == 0:
-            print("Point cloud is empty! Nothing to save.")
-            return
-        
-       # print(f"Saving debug point cloud to {filename}...")
-        #o3d.io.write_point_cloud(filename, self.pcd)
-        #print("Debug point cloud saved.")
-
     def show(self):
         """Open Open3D visualization and block until closed."""
         if self.vis is None:
@@ -142,16 +147,15 @@ class PointCloudGenerator:
             self.vis.create_window()
             self.vis.add_geometry(self.pcd)
 
-            # Register key callbacks
-            self.vis.register_key_callback(256, self.close_visualizer)  # ESC key
-            self.vis.register_key_callback(99, self.close_visualizer)   # 'C' key
+            self.vis.register_key_callback(256, self.close_visualizer) # ESC key
+            self.vis.register_key_callback(99, self.close_visualizer) # C key
 
             print("Opened Open3D visualization window. Press ESC or C to close.")
 
         # **Block execution until the user closes the window**
-        self.vis.run()  
-        self.close_visualizer()  # Ensure proper cleanup
-   
+        self.vis.run()
+        self.close_visualizer()
+
     def close_visualizer(self, vis=None):
         """Close the Open3D visualization window and restore OpenGL context."""
         if self.vis is not None:
@@ -166,11 +170,10 @@ class PointCloudGenerator:
             for line in file:
                 if line.startswith("Translation:"):
                     translation = np.fromstring(line[len("Translation: "):].strip()[1:-1], sep=' ')
-                    # Assuming the translation values are roll, pitch, yaw
                     rotation_matrix = R.from_euler('xyz', translation).as_matrix()
                     transformations.append(rotation_matrix)
         return transformations
-
+    
     def generate_point_cloud_from_transformations(self, transformations):
         """Generate a point cloud from the transformations."""
         points = []
@@ -187,3 +190,4 @@ class PointCloudGenerator:
         points = self.generate_point_cloud_from_transformations(transformations)
         self.pcd.points = o3d.utility.Vector3dVector(points.astype(np.float32))
         print(f"Generated point cloud with {len(points)} points from log.")
+        return transformations

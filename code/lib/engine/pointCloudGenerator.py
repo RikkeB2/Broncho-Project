@@ -20,6 +20,8 @@ class PointCloudGenerator:
         transformation = np.eye(4)
         transformation[:3, :3] = R
         transformation[:3, 3] = T
+
+        
         return transformation
 
     def depth2pointcloud(self, depth_img2):

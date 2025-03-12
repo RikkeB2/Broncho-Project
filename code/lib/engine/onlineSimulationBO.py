@@ -424,7 +424,10 @@ class onlineSimulationWithNetwork(object):
         transformation_matrix = np.eye(4)
         transformation_matrix[:3, :3] = R
         transformation_matrix[:3, 3] = T
+
         return transformation_matrix
+    
+    file = open("transformation.txt", "w+")
 
     def runManual(self, args, point_cloud_generator):
 
@@ -673,6 +676,7 @@ class onlineSimulationWithNetwork(object):
     def runVS2(self, args, point_cloud_generator):
         # Pitch and Roll    
         count = len(self.centerlineArray) - 1
+        file = open("transformation.txt", "w+")
 
         start_index = len(self.centerlineArray) - 3
 
@@ -763,7 +767,6 @@ class onlineSimulationWithNetwork(object):
 
             # Construct the transformation matrix
             transformation_matrix = self.get_transformation_matrix(R_current, T_current)
-            print("Transformation Matrix:\n", transformation_matrix)
             point_cloud_generator.get_transformation_matrix(R_current, T_current)
 
 
@@ -792,6 +795,8 @@ class onlineSimulationWithNetwork(object):
                 if depth_img2 is not None and np.any(depth_img2 > 0):
                     point_cloud_generator.save_intermediate_pc(depth_img2, os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
                     point_cloud_generator.update_point_cloud(depth_img2, "translation_log.txt")
+                    print("Transformation Matrix:\n", transformation_matrix)
+                    file.write(f"{transformation_matrix.tolist()}\n")
 
                     # Save intermediate point cloud
                     #print(f"Saving intermediate point cloud at step {frame_count}")

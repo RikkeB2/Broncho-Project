@@ -5,7 +5,7 @@ import os
 def main():
     
     # Load the NumPy file
-    npy_data = np.load(r"pointclouds\final_point_cloud.pcd.npy")
+    npy_data = np.load(r"pointclouds\intermediate_point_cloud_200.pcd.npy")
 
     # Convert to Open3D point cloud
     pcd = o3d.geometry.PointCloud()

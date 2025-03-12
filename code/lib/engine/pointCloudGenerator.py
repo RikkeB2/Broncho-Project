@@ -39,6 +39,25 @@ class PointCloudGenerator:
         print("First 5 valid points:", points[:5])  # Ensure points are being generated
 
         return points
+    
+    def save_intermediate_pc(self, depth_img2, filename):
+        """Generate a new point cloud from a depth image and save it to a file."""
+        
+        # Generate a new point cloud from the depth image
+        points = self.depth2pointcloud(depth_img2)
+        
+        # Create a new point cloud object
+        new_pcd = o3d.geometry.PointCloud()
+        new_pcd.points = o3d.utility.Vector3dVector(points.astype(np.float32))
+        
+        # Save the new point cloud to a file
+        o3d.io.write_point_cloud(filename, new_pcd)
+        print("New point cloud saved successfully.")
+        
+        # Save as NumPy array for debugging
+        np.save(filename + ".npy", np.asarray(new_pcd.points))
+        print(f"New point cloud also saved as NumPy array to {filename}.npy")
+
 
     def voxel_filter(self, voxel_size=0.01):
         """Apply voxel grid filtering to the point cloud."""

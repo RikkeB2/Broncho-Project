@@ -11,6 +11,16 @@ class PointCloudGenerator:
         self.pcd = o3d.geometry.PointCloud() # The accumulated point cloud (without visualization)
         self.vis = None # The Open3D visualization window
         self.previous_pcd = None # The previous point cloud for ICP
+        self.R = np.eye(3)  # Initialize rotation matrix
+        self.T = np.zeros(3) # Initialize translation vector
+        self.intermediate_point_clouds = []  # Store intermediate point clouds for combining
+
+    def get_transformation_matrix(self, R, T):
+        """Get a transformation matrix from a rotation matrix and translation vector."""
+        transformation = np.eye(4)
+        transformation[:3, :3] = R
+        transformation[:3, 3] = T
+        return transformation
 
     def depth2pointcloud(self, depth_img2):
         """Convert a depth image to a 3D point cloud using correct scaling."""
@@ -45,10 +55,16 @@ class PointCloudGenerator:
         
         # Generate a new point cloud from the depth image
         points = self.depth2pointcloud(depth_img2)
+
+        # Convert points to homogeneous coordinates
+        homogeneous_points = np.hstack((points, np.ones((points.shape[0], 1))))
+
+        transformation_matrix = self.get_transformation_matrix(self.R, self.T)
+        transformed_points = (transformation_matrix @ homogeneous_points.T).T[:, :3]
         
         # Create a new point cloud object
         new_pcd = o3d.geometry.PointCloud()
-        new_pcd.points = o3d.utility.Vector3dVector(points.astype(np.float32))
+        new_pcd.points = o3d.utility.Vector3dVector(transformed_points.astype(np.float32))
         
         # Save the new point cloud to a file
         o3d.io.write_point_cloud(filename, new_pcd)
@@ -57,6 +73,29 @@ class PointCloudGenerator:
         # Save as NumPy array for debugging
         np.save(filename + ".npy", np.asarray(new_pcd.points))
         print(f"New point cloud also saved as NumPy array to {filename}.npy")
+
+        # Append the new point cloud to the list of intermediate point clouds
+        self.intermediate_point_clouds.append(new_pcd)
+
+    def combine_point_clouds(self):
+        """Combine all intermediate point clouds into the main point cloud."""
+        combined_points = []
+        for pcd in self.intermediate_point_clouds:
+            combined_points.extend(np.asarray(pcd.points))
+
+        if combined_points:
+            combined_points_array = np.array(combined_points).astype(np.float32)  # Convert to NumPy array
+            self.pcd.points = o3d.utility.Vector3dVector(combined_points_array)
+            print(f"Combined {len(self.intermediate_point_clouds)} point clouds into the main point cloud.")
+            self.intermediate_point_clouds = []  # Clear the list after combining
+
+            # Save the combined point cloud as a NumPy array
+            np.save("combined_point_cloud.npy", combined_points_array)
+            print("Combined point cloud saved as combined_point_cloud.npy")
+        else:
+            print("No intermediate point clouds to combine.")
+
+
 
 
     def voxel_filter(self, voxel_size=0.01):
@@ -193,20 +232,3 @@ class PointCloudGenerator:
                     transformations.append(rotation_matrix)
         return transformations
     
-    def generate_point_cloud_from_transformations(self, transformations):
-        """Generate a point cloud from the transformations."""
-        points = []
-        for transformation in transformations:
-            # Generate a point at the origin and apply the transformation
-            point = np.array([0, 0, 0])
-            transformed_point = transformation @ point
-            points.append(transformed_point)
-        return np.array(points)
-
-    def create_point_cloud_from_log(self, log_file_path):
-        """Create a point cloud from the translation log."""
-        transformations = self.read_transformations_log(log_file_path)
-        points = self.generate_point_cloud_from_transformations(transformations)
-        self.pcd.points = o3d.utility.Vector3dVector(points.astype(np.float32))
-        print(f"Generated point cloud with {len(points)} points from log.")
-        return transformations

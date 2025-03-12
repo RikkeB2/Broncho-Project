@@ -418,6 +418,13 @@ class onlineSimulationWithNetwork(object):
         print(f"Depth Image Stats after normalization: Min={np.min(depth_img)}, Max={np.max(depth_img)}, Mean={np.mean(depth_img)}")
 
         return rgb_img, depth_img, rgb_img_ori, depth_img2
+    
+    def get_transformation_matrix(self, R, T):
+        """Construct the transformation matrix from the rotation matrix and translation vector."""
+        transformation_matrix = np.eye(4)
+        transformation_matrix[:3, :3] = R
+        transformation_matrix[:3, 3] = T
+        return transformation_matrix
 
     def runManual(self, args, point_cloud_generator):
 
@@ -488,6 +495,10 @@ class onlineSimulationWithNetwork(object):
             R_current = np.reshape(R_current, (3, 3))
             T_current = t
 
+            # Construct the transformation matrix
+            transformation_matrix = self.get_transformation_matrix(R_current, T_current)
+            print("Transformation Matrix:\n", transformation_matrix)
+
             path_trajectoryT.append(t)
             path_trajectoryR.append(p.getMatrixFromQuaternion(quat_current))
 
@@ -503,8 +514,8 @@ class onlineSimulationWithNetwork(object):
                 if depth_img2 is not None and np.any(depth_img2 > 0):
                     point_cloud_generator.update_point_cloud(depth_img2)
 
-                    # Only visualize & save at **certain intervals**
-                    if frame_count % 100 == 0:  # Adjust as needed
+                    # Only visualize & save at certain intervals
+                    if frame_count % 100 == 0:  # Adjust 
                         print(f"Saving intermediate point cloud at step {frame_count}")
                         point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
                         print(f"Intermediate point cloud saved at step {frame_count}")
@@ -729,6 +740,8 @@ class onlineSimulationWithNetwork(object):
         #Initialize robot
         m_robot = BroncoRobot1()
 
+        # Create a log file for transformation matrices
+        
         frame_count = 0
 
         while 1:
@@ -747,6 +760,12 @@ class onlineSimulationWithNetwork(object):
             quatCam = p.getQuaternionFromEuler([pitch + np.pi / 2, roll, yaw])
             R_currentCam = p.getMatrixFromQuaternion(quatCam)
             R_currentCam = np.reshape(R_currentCam, (3, 3))
+
+            # Construct the transformation matrix
+            transformation_matrix = self.get_transformation_matrix(R_current, T_current)
+            print("Transformation Matrix:\n", transformation_matrix)
+            point_cloud_generator.get_transformation_matrix(R_current, T_current)
+
 
             pose = np.identity(4)
             pose[:3, 3] = T_current

@@ -78,9 +78,13 @@ if __name__ == '__main__':
     finally:
         # Always save the final point cloud, even if interrupted
         final_path = os.path.join("pointclouds", "final_point_cloud.pcd")
+        print("Combining all intermediate point clouds...")
+        point_cloud_generator.combine_point_clouds()
+        print("Finished combining point clouds.")
         if len(point_cloud_generator.pcd.points) > 0:
             print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
             point_cloud_generator.save_pc(final_path)
             print(f"Final point cloud saved at {final_path}.")
+
         else:
             print("Point cloud is empty. Nothing to save.")

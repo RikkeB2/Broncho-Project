@@ -18,5 +18,5 @@ def visualize_obj(file_path):
     o3d.visualization.draw_geometries([mesh])
 
 if __name__ == "__main__":
-    file_path = "pointclouds\meshes\intermediate_point_cloud_200.obj"  # Change this to OBJ file path
+    file_path = "code\pointclouds\meshes\intermediate_point_cloud_200.obj"  # Change this to OBJ file path
     visualize_obj(file_path)

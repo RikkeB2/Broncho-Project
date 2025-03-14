@@ -87,19 +87,27 @@ def visualize_segmented_disks_and_centers(vtk_file, centers_file):
     disks_reader.SetFileName(vtk_file)
     disks_reader.Update()
     disks_polydata = disks_reader.GetOutput()
+
     centers_reader = vtk.vtkPolyDataReader()
     centers_reader.SetFileName(centers_file)
     centers_reader.Update()
     centers_polydata = centers_reader.GetOutput()
+
+    # Disks: Red and very see-through
     disks_mapper = vtk.vtkPolyDataMapper()
     disks_mapper.SetInputData(disks_polydata)
     disks_actor = vtk.vtkActor()
     disks_actor.SetMapper(disks_mapper)
+    disks_actor.GetProperty().SetColor(1, 0, 0)  # Red
+    disks_actor.GetProperty().SetOpacity(0.1)  # Very see-through
+
+    # Centers: Small points
     centers_mapper = vtk.vtkPolyDataMapper()
     centers_mapper.SetInputData(centers_polydata)
     centers_actor = vtk.vtkActor()
     centers_actor.SetMapper(centers_mapper)
-    centers_actor.GetProperty().SetPointSize(10)
+    centers_actor.GetProperty().SetPointSize(5)  # Smaller points
+
     points = centers_polydata.GetPoints()
     num_points = points.GetNumberOfPoints()
 
@@ -120,17 +128,20 @@ def visualize_segmented_disks_and_centers(vtk_file, centers_file):
         line_mapper.SetInputData(line_polydata)
         line_actor = vtk.vtkActor()
         line_actor.SetMapper(line_mapper)
-        line_actor.GetProperty().SetColor(1, 0, 0)
-        line_actor.GetProperty().SetLineWidth(2)
+        line_actor.GetProperty().SetColor(0, 1, 0)  # Green line
+        line_actor.GetProperty().SetLineWidth(3)  # Slightly thicker line
+
         renderer = vtk.vtkRenderer()
         render_window = vtk.vtkRenderWindow()
         render_window.AddRenderer(renderer)
         render_window_interactor = vtk.vtkRenderWindowInteractor()
         render_window_interactor.SetRenderWindow(render_window)
+
         renderer.AddActor(disks_actor)
         renderer.AddActor(centers_actor)
         renderer.AddActor(line_actor)
-        renderer.SetBackground(0.1, 0.2, 0.4)
+        renderer.SetBackground(0.8, 0.8, 0.8)  # Light gray background
+
         render_window.Render()
         render_window_interactor.Start()
     else:
@@ -140,9 +151,11 @@ def visualize_segmented_disks_and_centers(vtk_file, centers_file):
         render_window.AddRenderer(renderer)
         render_window_interactor = vtk.vtkRenderWindowInteractor()
         render_window_interactor.SetRenderWindow(render_window)
+
         renderer.AddActor(disks_actor)
         renderer.AddActor(centers_actor)
-        renderer.SetBackground(0.1, 0.2, 0.4)
+        renderer.SetBackground(0.8, 0.8, 0.8)  # Light gray background
+
         render_window.Render()
         render_window_interactor.Start()
 

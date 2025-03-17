@@ -518,7 +518,7 @@ class onlineSimulationWithNetwork(object):
                     point_cloud_generator.update_point_cloud(depth_img2)
 
                     # Only visualize & save at certain intervals
-                    if frame_count % 100 == 0:  # Adjust 
+                    if frame_count % 50 == 0:  # Adjust 
                         print(f"Saving intermediate point cloud at step {frame_count}")
                         point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
                         print(f"Intermediate point cloud saved at step {frame_count}")
@@ -791,7 +791,7 @@ class onlineSimulationWithNetwork(object):
 
             # Update point cloud and log translations every 100 frames
             frame_count += 1
-            if frame_count % 100 == 0:
+            if frame_count % 50 == 0:
                 if depth_img2 is not None and np.any(depth_img2 > 0):
                     point_cloud_generator.save_intermediate_pc(depth_img2, os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
                     point_cloud_generator.update_point_cloud(depth_img2, "translation_log.txt")

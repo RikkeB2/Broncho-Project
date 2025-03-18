@@ -1,114 +1,75 @@
-import vtk
+import open3d as o3d
+import numpy as np
 
-def generate_volumetric_representation(obj_file, output_file="volumetric_representation.vtk", voxel_size=0.01):
+def get_mesh_volume(mesh, voxel_size=0.01):
     """
-    Generates a volumetric representation of a 3D object from an OBJ file and visualizes it.
-
+    Get the volumetric representation (inside) of a mesh using voxelization.
+    
     Args:
-        obj_file (str): Path to the input OBJ file.
-        output_file (str): Path to save the volumetric representation as a VTK file.
-        voxel_size (float): Size of the voxels in the volumetric representation.
+        mesh (o3d.geometry.TriangleMesh): The input mesh.
+        voxel_size (float): The size of the voxels for voxelization.
+    
+    Returns:
+        np.ndarray: A binary 3D numpy array representing the inside of the mesh.
     """
-    # Load the OBJ file
-    reader = vtk.vtkOBJReader()
-    reader.SetFileName(obj_file)
-    reader.Update()
+    # Check if the mesh contains triangles
+    if len(mesh.triangles) == 0:
+        raise ValueError("The input mesh does not contain triangles. Please provide a valid mesh.")
 
-    polydata = reader.GetOutput()
+    # Convert the mesh to a voxel grid
+    voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(mesh, voxel_size=voxel_size)
+    print("Voxel grid created.")
 
-    # Debug: Check if the OBJ file is valid
-    print(f"Number of points in the OBJ file: {polydata.GetNumberOfPoints()}")
-    print(f"Number of cells in the OBJ file: {polydata.GetNumberOfCells()}")
+    # Convert voxel grid to a binary 3D numpy array
+    voxel_indices = np.array([voxel.grid_index for voxel in voxel_grid.get_voxels()])
+    if voxel_indices.size == 0:
+        raise ValueError("Voxel grid creation failed. The mesh might be invalid or too sparse.")
 
-    if polydata.GetNumberOfPoints() == 0 or polydata.GetNumberOfCells() == 0:
-        print("Error: The input OBJ file is empty or invalid.")
-        return
+    grid_shape = np.max(voxel_indices, axis=0) + 1
+    binary_grid = np.zeros(grid_shape, dtype=bool)
+    binary_grid[tuple(voxel_indices.T)] = True
+    print("Binary grid created.")
 
-    # Compute the bounds of the object
-    bounds = polydata.GetBounds()
-    print(f"Bounds of the object: {bounds}")
+    return binary_grid
 
-    # Create a voxel model
-    voxel_modeller = vtk.vtkVoxelModeller()
-    voxel_modeller.SetInputData(polydata)
-    voxel_modeller.SetSampleDimensions(
-        int((bounds[1] - bounds[0]) / voxel_size),
-        int((bounds[3] - bounds[2]) / voxel_size),
-        int((bounds[5] - bounds[4]) / voxel_size),
-    )
-    voxel_modeller.SetModelBounds(bounds)
-    voxel_modeller.SetScalarTypeToFloat()
-    voxel_modeller.Update()
-
-    # Convert the voxel model to polydata
-    contour_filter = vtk.vtkMarchingCubes()
-    contour_filter.SetInputConnection(voxel_modeller.GetOutputPort())
-    contour_filter.SetValue(0, 0.5)  # Threshold value for the isosurface
-    contour_filter.Update()
-
-    # Save the volumetric representation to a VTK file
-    writer = vtk.vtkPolyDataWriter()
-    writer.SetFileName(output_file)
-    writer.SetInputData(contour_filter.GetOutput())
-    writer.Write()
-
-    print(f"Volumetric representation saved to {output_file}")
-
-    # Extract the center structure (skeletonization)
-    centerline_filter = vtk.vtkCenterlineExtraction()
-    centerline_filter.SetInputData(contour_filter.GetOutput())
-    centerline_filter.SetRadiusArrayName("Radius")
-    centerline_filter.Update()
-
-    # Visualize the volumetric representation and centerline
-    visualize_volumetric_representation(contour_filter.GetOutput(), centerline_filter.GetOutput())
-
-
-def visualize_volumetric_representation(volumetric_data, centerline_data):
+def visualize_volume(binary_grid, voxel_size=0.01):
     """
-    Visualizes the volumetric representation and its centerline.
-
+    Visualize the volumetric representation using Open3D.
+    
     Args:
-        volumetric_data: The volumetric representation as vtkPolyData.
-        centerline_data: The centerline representation as vtkPolyData.
+        binary_grid (np.ndarray): A binary 3D numpy array representing the inside of the mesh.
+        voxel_size (float): The size of the voxels for visualization.
     """
-    # Create a mapper and actor for the volumetric data
-    volume_mapper = vtk.vtkPolyDataMapper()
-    volume_mapper.SetInputData(volumetric_data)
+    # Get the indices of the filled voxels
+    filled_voxels = np.argwhere(binary_grid)
 
-    volume_actor = vtk.vtkActor()
-    volume_actor.SetMapper(volume_mapper)
-    volume_actor.GetProperty().SetOpacity(0.3)  # Make the volume semi-transparent
+    # Create an Open3D point cloud for visualization
+    points = filled_voxels * voxel_size  # Scale voxel indices to real-world coordinates
+    point_cloud = o3d.geometry.PointCloud()
+    point_cloud.points = o3d.utility.Vector3dVector(points)
 
-    # Create a mapper and actor for the centerline
-    centerline_mapper = vtk.vtkPolyDataMapper()
-    centerline_mapper.SetInputData(centerline_data)
+    # Visualize the volumetric representation
+    o3d.visualization.draw_geometries([point_cloud])
+    print("Volumetric representation visualized.")
 
-    centerline_actor = vtk.vtkActor()
-    centerline_actor.SetMapper(centerline_mapper)
-    centerline_actor.GetProperty().SetColor(1, 0, 0)  # Red color for the centerline
-    centerline_actor.GetProperty().SetLineWidth(3)
-
-    # Create a renderer, render window, and interactor
-    renderer = vtk.vtkRenderer()
-    render_window = vtk.vtkRenderWindow()
-    render_window.AddRenderer(renderer)
-    render_window_interactor = vtk.vtkRenderWindowInteractor()
-    render_window_interactor.SetRenderWindow(render_window)
-
-    # Add the actors to the renderer
-    renderer.AddActor(volume_actor)
-    renderer.AddActor(centerline_actor)
-    renderer.SetBackground(0.1, 0.2, 0.4)  # Background color
-
-    # Render and start interaction
-    render_window.Render()
-    render_window_interactor.Start()
-
-
-# Example usage
 if __name__ == "__main__":
-    obj_file = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\code\pointclouds\meshes\intermediate_point_cloud_100.obj"
-    output_file = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\code\pointclouds\meshes\volumetric_representation.vtk"
-    voxel_size = 0.5 # Adjust the voxel size as needed
-    generate_volumetric_representation(obj_file, output_file, voxel_size)
+    # Example usage
+    file_path = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\code\pointclouds\meshes\accumulated_point_cloud.ply"  # Replace with your point cloud file path
+    
+    # Load the mesh or point cloud
+    mesh = o3d.io.read_triangle_mesh(file_path)
+    print("Mesh loaded.")
+
+    # If the input is a point cloud, convert it to a mesh
+    if len(mesh.triangles) == 0:
+        print("Input appears to be a point cloud. Converting to a mesh using Poisson reconstruction...")
+        point_cloud = o3d.io.read_point_cloud(file_path)
+        mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(point_cloud, depth=9)
+        print("Mesh created from point cloud.")
+
+    # Get volumetric representation
+    volume = get_mesh_volume(mesh)
+    print(f"Volumetric representation created with shape {volume.shape}.")
+
+    # Visualize the volumetric representation
+    visualize_volume(volume)

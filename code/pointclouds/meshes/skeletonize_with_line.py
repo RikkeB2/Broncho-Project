@@ -65,7 +65,7 @@ def extract_centerline(mesh_path, num_points=5000, k_neighbors=10):
         return pcd, None #Return None centerline, so that the program doesn't crash.
 
 if __name__ == "__main__":
-    mesh_path = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\code\pointclouds\meshes\intermediate_point_cloud_100.obj"  # Replace with your mesh path
+    mesh_path = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\code\pointclouds\meshes\intermediate_point_cloud_250.obj"  # Replace with your mesh path
     pcd, centerline = extract_centerline(mesh_path)
     if centerline is not None:
         o3d.visualization.draw_geometries([pcd, centerline])

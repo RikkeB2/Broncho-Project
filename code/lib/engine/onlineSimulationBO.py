@@ -32,6 +32,8 @@ from .simRobot import BroncoRobot1
 
 from .pointCloudGenerator import PointCloudGenerator
 
+from .centerline_processor import CenterlineProcessor
+
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
 
@@ -171,52 +173,28 @@ class onlineSimulationWithNetwork(object):
         mesh = reader.GetOutput()
         points = mesh.GetPoints()
         data = points.GetData()
-        centerlineArray = vtk_to_numpy(data)
-        centerlineArray = np.dot(self.R_model, centerlineArray.T).T * 0.01 + self.t_model
 
-        # Downsample or upsample the centerline to the same length/size rate
-        centerline_length = 0
-        for i in range(len(centerlineArray) - 1):
-            length_diff = np.linalg.norm(centerlineArray[i] - centerlineArray[i + 1])
-            centerline_length += length_diff
-        centerline_size = len(centerlineArray)
-        lenth_size_rate = 0.007  # refer to Siliconmodel1
-        centerline_size_exp = int(centerline_length / lenth_size_rate)
-        centerlineArray_exp = np.zeros((centerline_size_exp, 3))
-        for index_exp in range(centerline_size_exp):
-            index = index_exp / (centerline_size_exp - 1) * (centerline_size - 1) # calcula a percentagem de caminho em que esta e vai procurar qual o index correspondente no path inicial
-            index_left_bound = int(index) # vai buscar o valor a esquerda e a direita
-            index_right_bound = int(index) + 1
-            if index_left_bound == centerline_size - 1:
-                centerlineArray_exp[index_exp] = centerlineArray[index_left_bound]
-            else:
-                centerlineArray_exp[index_exp] = (index_right_bound - index) * centerlineArray[index_left_bound] + (index - index_left_bound) * centerlineArray[index_right_bound] # calculate the medium value between the boundaries of them
-        centerlineArray = centerlineArray_exp
+        # Initialize CenterlineProcessor
+        self.centerline_processor = CenterlineProcessor(
+            self.centerline_model_dir, self.R_model, self.t_model
+        )
 
-        # Smoothing trajectory
-        self.originalCenterlineArray = centerlineArray
-        centerlineArray_smoothed = np.zeros_like(centerlineArray)
-        for i in range(len(centerlineArray)):
-            left_bound = i - 10
-            right_bound = i + 10
-            if left_bound < 0: left_bound = 0
-            if right_bound > len(centerlineArray): right_bound = len(centerlineArray)
-            centerlineArray_smoothed[i] = np.mean(centerlineArray[left_bound : right_bound], axis=0)
-        self.centerlineArray = centerlineArray_smoothed
+        # Access processed centerline data
+        self.originalCenterlineArray = self.centerline_processor.get_original_centerline()
+        self.centerlineArray = self.centerline_processor.get_smoothed_centerline()
+        self.centerline_length = self.centerline_processor.get_centerline_length()
+        self.time_step = self.centerline_processor.get_time_step()
 
-        # Calculate trajectory length
-        centerline_length = 0
-        for i in range(len(self.centerlineArray) - 1):
-            length_diff = np.linalg.norm(self.centerlineArray[i] - self.centerlineArray[i + 1])
-            centerline_length += length_diff
-        self.centerline_length = centerline_length
+        print("Centerline Length:", self.centerline_length)
+        print("Centerline Array Shape:", self.centerlineArray.shape)
+        print("Centerline Array:", self.centerlineArray)
 
         # Generate new path in each step
         reader = vtk.vtkPolyDataReader()
         reader.SetFileName(self.airway_model_dir) #modelo do pulmao oco (Hollow lung model)
         reader.Update()
         self.vtkdata = reader.GetOutput()
-        self.targetPoint = centerlineArray[0]
+        self.targetPoint = self.centerlineArray[0]
         self.transformed_target = np.dot(np.linalg.inv(self.R_model), self.targetPoint - self.t_model) * 100 # recalcula para o ponto inicial 
         self.transformed_target_vtk_cor = np.array([-self.transformed_target[0], -self.transformed_target[1], self.transformed_target[2]])  #put in the same coordinate system # x and y here is opposite to those in the world coordinate system
         
@@ -231,9 +209,9 @@ class onlineSimulationWithNetwork(object):
 
         boundingbox = p.getAABB(airwayBodyId)
         print(boundingbox)
-        print(np.max(centerlineArray, axis=0))
-        print(np.min(centerlineArray, axis=0))
-        print(np.argmax(centerlineArray, axis=0))
+        print(np.max(self.centerlineArray, axis=0))
+        print(np.min(self.centerlineArray, axis=0))
+        print(np.argmax(self.centerlineArray, axis=0))
         position = p.getBasePositionAndOrientation(airwayBodyId) # position XYZ e orientacao quaternion
 
         # Pyrender initialization
@@ -533,6 +511,7 @@ class onlineSimulationWithNetwork(object):
 
             # Get the nearest point of the center line to the current one
             nearest_original_centerline_point_sim_cor_index = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()
+            print("Nearest Original Centerline Point Index:", nearest_original_centerline_point_sim_cor_index)
 
             # Stops the simulation if the index of the nearest point is closer to the end of the trajectory
             if nearest_original_centerline_point_sim_cor_index <= 10:  # reach the target point
@@ -809,6 +788,7 @@ class onlineSimulationWithNetwork(object):
 
             # Get the nearest point of the center line to the current one
             nearest_original_centerline_point_sim_cor_index = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()
+            print(f"Nearest Original Centerline Point Index: {nearest_original_centerline_point_sim_cor_index}")
 
             # Stops the simulation if the index of the nearest point is closer to the end of the trajectory
             if nearest_original_centerline_point_sim_cor_index <= 10:  # reach the target point

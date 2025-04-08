@@ -46,5 +46,5 @@ def visualize_segmented_disks(vtk_file):
 
 # Example usage
 if __name__ == "__main__":
-    vtk_file = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\code\pointclouds\meshes\segmented_disks.vtk"
+    vtk_file = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\meshes\meshes_obj\segmented_disks.vtk"
     visualize_segmented_disks(vtk_file)

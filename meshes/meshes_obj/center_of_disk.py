@@ -160,7 +160,7 @@ def visualize_segmented_disks_and_centers(vtk_file, centers_file):
         render_window_interactor.Start()
 
 if __name__ == "__main__":
-    mesh_file = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\code\pointclouds\meshes\intermediate_point_cloud_100.obj"
+    mesh_file = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\meshes\meshes_obj\intermediate_point_cloud_260.obj"
     num_disks = 100
     segment_mesh_into_disks(mesh_file, num_disks)
     visualize_segmented_disks_and_centers("segmented_disks.vtk", "disk_centers.vtk")

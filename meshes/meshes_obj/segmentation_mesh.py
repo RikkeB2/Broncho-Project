@@ -80,6 +80,6 @@ def segment_mesh_into_disks(mesh_file, num_disks, output_file="segmented_disks.v
     print(f"All segmented disks saved to {output_file}")
 
 if __name__ == "__main__":
-    mesh_file = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\code\pointclouds\meshes\intermediate_point_cloud_100.obj"
+    mesh_file = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\meshes\meshes_obj\intermediate_point_cloud_260.obj"
     num_disks = 100
     segment_mesh_into_disks(mesh_file, num_disks)

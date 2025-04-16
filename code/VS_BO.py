@@ -60,14 +60,6 @@ if __name__ == '__main__':
             count = count + 1
             print(count)
 
-            # Save the point cloud periodically
-            if count % 50 == 0:  # Adjust the frequency as needed
-                    print(f"Saving intermediate point cloud at step {count}")
-                    print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
-                    point_cloud_generator.save_pc(os.path.join(pointclouds_dir, f"intermediate_point_cloud_{count}.pcd"))
-                    print(f"Intermediate point cloud saved at step {count}")
-
-
         # mdic = {"path_trajectoryT": path_trajectoryT, "path_trajectoryR": path_trajectoryR, "path_centerline_ratio_list": path_centerline_ratio_list, \
                     #"originalCenterlineArray":originalCenterlineArray, "path_jointvel":path_jointvel, "path_joint":path_joint}
             #savemat("./results/vsGT" + str(count) + ".mat", mdic)
@@ -77,14 +69,11 @@ if __name__ == '__main__':
 
     finally:
         # Always save the final point cloud, even if interrupted
-        final_path = os.path.join("pointclouds", "final_point_cloud.pcd")
-        print("Combining all intermediate point clouds...")
-        point_cloud_generator.combine_point_clouds()
-        print("Finished combining point clouds.")
+        final_path = os.path.join("pointclouds", "final_point_cloud.ply")
         if len(point_cloud_generator.pcd.points) > 0:
             print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
-            point_cloud_generator.save_pc(final_path)
+            point_cloud_generator.save_accumulated_point_cloud()
             print(f"Final point cloud saved at {final_path}.")
-
         else:
+            
             print("Point cloud is empty. Nothing to save.")

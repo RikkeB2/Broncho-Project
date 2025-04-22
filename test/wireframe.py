@@ -2,27 +2,27 @@ import numpy as np
 import pyvista as pv
 import open3d as o3d
 
-# Load the .ply file
-file_path = r"C:\Users\Rikke\OneDrive - Syddansk Universitet\6. semester\Bacehlor projekt\Broncho-Project\test\trimmed_pointcloud.ply"
-pcd = o3d.io.read_point_cloud(file_path)
+# Load the .vtu file using PyVista
+file_path = r"C:\Users\Rikke\OneDrive - Syddansk Universitet\6. semester\Bacehlor projekt\Broncho-Project\test\output_mesh.vtp"
+pv_mesh = pv.read(file_path)
 
-# Convert the Open3D PointCloud object to a NumPy array (if needed)
-point_cloud = np.asarray(pcd.points)
+# Optionally convert the PyVista mesh to an Open3D PointCloud (if needed)
+vertices = np.asarray(pv_mesh.points)
+faces = pv_mesh.faces.reshape(-1, 4)[:, 1:]  # Convert PyVista face format to Open3D format
 
-# Convert the NumPy array to an Open3D PointCloud object
 pcd = o3d.geometry.PointCloud()
-pcd.points = o3d.utility.Vector3dVector(point_cloud)
+pcd.points = o3d.utility.Vector3dVector(vertices)
 
 # Estimate normals for the point cloud
 pcd.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamHybrid(radius=0.1, max_nn=30))
 
-# Create a mesh using the Ball Pivoting Algorithm (BPA)
+# Create a mesh using the Ball Pivoting Algorithm (BPA) (optional, if needed)
 radii = [0.05, 0.1, 0.2]  # Adjust radii as needed
 bpa_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
     pcd, o3d.utility.DoubleVector(radii)
 )
 
-# Convert the Open3D mesh to PyVista for further processing
+# Convert the Open3D mesh back to PyVista for further processing
 vertices = np.asarray(bpa_mesh.vertices)
 faces = np.asarray(bpa_mesh.triangles)
 faces = np.hstack([[3] + list(face) for face in faces])  # Convert to PyVista face format
@@ -38,7 +38,6 @@ cleaned_mesh = filled_mesh.clean()
 smoothed_mesh = cleaned_mesh.smooth(n_iter=30, relaxation_factor=0.1)
 
 # Compute distance to centerlines (Figure 4)
-# Replace 'centerline_file.vtk' with the actual path to your centerline file
 centerline_path = r"C:\Users\Rikke\OneDrive - Syddansk Universitet\6. semester\Bacehlor projekt\Broncho-Project\test\centerline_file.vtk"
 try:
     centerline = pv.read(centerline_path)

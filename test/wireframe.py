@@ -2,9 +2,12 @@ import numpy as np
 import pyvista as pv
 import open3d as o3d
 
-# Load the .npy file
-file_path = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\test\accumulated_point_cloud.npy"
-point_cloud = np.load(file_path)
+# Load the .ply file
+file_path = r"C:\Users\Rikke\OneDrive - Syddansk Universitet\6. semester\Bacehlor projekt\Broncho-Project\test\trimmed_pointcloud.ply"
+pcd = o3d.io.read_point_cloud(file_path)
+
+# Convert the Open3D PointCloud object to a NumPy array (if needed)
+point_cloud = np.asarray(pcd.points)
 
 # Convert the NumPy array to an Open3D PointCloud object
 pcd = o3d.geometry.PointCloud()
@@ -36,7 +39,7 @@ smoothed_mesh = cleaned_mesh.smooth(n_iter=30, relaxation_factor=0.1)
 
 # Compute distance to centerlines (Figure 4)
 # Replace 'centerline_file.vtk' with the actual path to your centerline file
-centerline_path = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\test\centerline_file.vtk"
+centerline_path = r"C:\Users\Rikke\OneDrive - Syddansk Universitet\6. semester\Bacehlor projekt\Broncho-Project\test\centerline_file.vtk"
 try:
     centerline = pv.read(centerline_path)
     distance = smoothed_mesh.compute_implicit_distance(centerline)

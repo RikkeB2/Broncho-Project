@@ -3,7 +3,7 @@ import pyvista as pv
 import open3d as o3d
 
 # Load the .npy file
-file_path = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\test\accumulated_point_cloud_frame_100.npy"
+file_path = r"C:\Users\Lenovo\OneDrive - Syddansk Universitet\Dokumenter\GitHub\Broncho-Project\test\accumulated_point_cloud.npy"
 point_cloud = np.load(file_path)
 
 # Convert the NumPy array to an Open3D PointCloud object

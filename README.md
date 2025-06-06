@@ -1,4 +1,4 @@
-# Robotics-based bronchoscopy
+# Robotics-Based bronchoscopy
 Bachelorproject @ SDU, F25
 
 Students:
@@ -23,3 +23,21 @@ Success will be defined as autonomous traversal of $\geq80\%$ of a predefined ce
 Incorporating clinically inspired joint velocity and acceleration limits into the control strategy will result in smoother and more biologically plausible articulation compared to an unconstrained baseline. 
 This constraint-aware approach is expected to reduce joint instability and improve motion continuity, particularly in anatomically complex regions. Success will be defined as maintaining an average Euclidean 
 deviation from the centreline under 10 mm.
+
+## How to Use This Code
+
+### Download the Code
+Clone or download this repository to your local machine.  
+git clone [https://github.com/your-username/your-repo-name.git](https://github.com/RikkeB2/Broncho-Project.git)  
+cd Broncho-Project  
+
+### Run the LEBO Model
+To execute the LEBO model, run the following script:  
+Example: python code/VS_LEBO.py  
+
+### Visualize Log Files
+To visualize outputs or log files, use the scripts available in the code/visualisation/ folder. These are helpful for analyzing and plotting results from model runs.  
+Example:  python code\visualization\plot_pcd.py   
+
+## Acknowledgements
+This project builds on code provided by our co-supervisor as part of the BronchoBot project. We gratefully acknowledge their support and contribution. You can learn more about the BronchoBot project here: [https://portal.findresearcher.sdu.dk/da/projects/bronchobot]

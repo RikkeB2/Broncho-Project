@@ -29,8 +29,11 @@ from .keyBoardEvents import getDirectionBO, getAdditionBO
 from scipy.io import savemat
 
 from .simRobot import BroncoRobot1 
+from .simRobot_kin import BroncoRobot2
 
 from .pointCloudGenerator import PointCloudGenerator
+from .centerLineGenerator import CenterlineGenerator
+from .kinematics import Kinem
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
@@ -192,6 +195,7 @@ class onlineSimulationWithNetwork(object):
             else:
                 centerlineArray_exp[index_exp] = (index_right_bound - index) * centerlineArray[index_left_bound] + (index - index_left_bound) * centerlineArray[index_right_bound] # calculate the medium value between the boundaries of them
         centerlineArray = centerlineArray_exp
+        print(f"Centerline length: {centerline_length}")
 
         # Smoothing trajectory
         self.originalCenterlineArray = centerlineArray
@@ -250,6 +254,8 @@ class onlineSimulationWithNetwork(object):
         self.spot_l_node = self.scene.add(spot_l)
         self.cam_node = self.scene.add(self.cam)
         self.r = OffscreenRenderer(viewport_width=400, viewport_height=400)
+
+        self.update_count = 0
 
 
     def indexFromDistance(self, centerlineArray, count, distance):
@@ -352,6 +358,7 @@ class onlineSimulationWithNetwork(object):
         quat = p.getQuaternionFromEuler([pitch, roll, yaw])
         R = p.getMatrixFromQuaternion(quat)
         R = np.reshape(R, (3, 3))
+        #Use this pose
         pose = np.identity(4)
         pose[:3, 3] = t
         pose[:3, :3] = R
@@ -405,6 +412,9 @@ class onlineSimulationWithNetwork(object):
             rgb_img = rgb_img_bullet
 
         depth_img2 = depth_img.copy()
+        
+        depth_img3 = depth_img.copy()
+        depth_img3 = np.asarray(depth_img3, dtype=np.float32)
 
         # Debugging: Print depth image stats before normalization
         print(f"Depth Image Stats before normalization: Min={np.min(depth_img)}, Max={np.max(depth_img)}, Mean={np.mean(depth_img)}")
@@ -417,7 +427,7 @@ class onlineSimulationWithNetwork(object):
         # Debugging: Print depth image stats after normalization
         print(f"Depth Image Stats after normalization: Min={np.min(depth_img)}, Max={np.max(depth_img)}, Mean={np.mean(depth_img)}")
 
-        return rgb_img, depth_img, rgb_img_ori, depth_img2
+        return pose, rgb_img, depth_img, rgb_img_ori, depth_img2, depth_img3
     
     def get_transformation_matrix(self, R, T):
         """Construct the transformation matrix from the rotation matrix and translation vector."""
@@ -427,7 +437,6 @@ class onlineSimulationWithNetwork(object):
 
         return transformation_matrix
     
-    file = open("transformation.txt", "w+")
 
     def runManual(self, args, point_cloud_generator):
 
@@ -485,6 +494,18 @@ class onlineSimulationWithNetwork(object):
 
         frame_count = 0
 
+        # Define the log directory
+        log_dir = "./logs"
+        os.makedirs(log_dir, exist_ok=True)
+
+        # Create log files in the log directory
+        transformation_log_file = open(os.path.join(log_dir, "transformation.txt"), "w+")
+        #pose_log_file = open(os.path.join(log_dir, "pose.txt"), "w+")
+        translation_log_file = open(os.path.join(log_dir, "translation.txt"), "w+")
+        translation_difference_log_file = open(os.path.join(log_dir, "translation_difference.txt"), "w+")
+        rotation_log_file = open(os.path.join(log_dir, "rotation.txt"), "w+")
+        rotation_log_file_2 = open(os.path.join(log_dir, "rotation_2.txt"), "w+")
+
         while 1:
             tic = time.time()
             p.stepSimulation()
@@ -506,22 +527,30 @@ class onlineSimulationWithNetwork(object):
             path_trajectoryR.append(p.getMatrixFromQuaternion(quat_current))
 
             # Get Images from current pose
-            rgb_img, depth_img, rgb_img_ori, depth_img2 =  self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
+            pose, rgb_img, depth_img, rgb_img_ori, depth_img2, depth_img3 =  self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
             print(f"Depth Image Shape: {depth_img2.shape}")
             print(f"Depth Image Sample: {depth_img2[100, 100]}")  # Check the value at a specific pixel
             print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
 
             #  Update point cloud every 10 frames
             frame_count += 1
-            if frame_count % 50 == 0:
+            if frame_count % 10 == 0:
                 if depth_img2 is not None and np.any(depth_img2 > 0):
-                    point_cloud_generator.update_point_cloud(depth_img2)
+                    point_cloud_generator.process_depth_and_transform(depth_img2, pose)
+                    # Log the transformation matrix to the file
+                    transformation_log_file.write(np.array_str(transformation_matrix) + "\n")
+                    translation_log_file.write(np.array_str(T_current) + "\n")
+                    rotation_log_file.write(np.array_str(R_current) + "\n")
+                    rotation_log_file_2.write(np.array_str(R_currentCam) + "\n")    
 
                     # Only visualize & save at certain intervals
-                    if frame_count % 50 == 0:  # Adjust 
+                    if frame_count % 100 == 0:  # Adjust 
                         print(f"Saving intermediate point cloud at step {frame_count}")
-                        point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
+                        point_cloud_generator.save_intermediate_pointcloud(depth_img2, transformation_matrix, f"intermediate_point_cloud_{frame_count}")
                         print(f"Intermediate point cloud saved at step {frame_count}")
+                        print(f"Saving accumulated point cloud at frame {frame_count}")
+                        point_cloud_generator.save_accumulated_point_cloud(filename=f"accumulated_point_cloud_frame_{frame_count}.npy")
+                        print(f"Accumulated point cloud saved at frame {frame_count}")
 
                 else:
                     print("Depth image is invalid. Skipping point cloud update and save.")
@@ -621,6 +650,10 @@ class onlineSimulationWithNetwork(object):
             intrinsic_matrix = np.array([[236.3918, 0, 237.2150],
                                     [0, 237.3016, 237.2665],
                                     [0, 0, 1]])
+            intrinsic_matrix = np.array([[181.93750381, 0, 200],
+                            [0, 181.93750381, 200],
+                            [0, 0, 1]])  #HERE BO
+
 
             target_width = 200
             target_height = 200
@@ -662,7 +695,7 @@ class onlineSimulationWithNetwork(object):
         print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
         if len(point_cloud_generator.pcd.points) > 0:
             print("Saving final point cloud...")
-            point_cloud_generator.save_pc(os.path.join("pointclouds", "final_point_cloud.pcd"))
+            point_cloud_generator.save_accumulated_point_cloud(os.path.join("pointclouds", "final_point_cloud.pcd"))
             print("Final point cloud saved.")
         else:
             print("Point cloud is empty. Nothing to save.")
@@ -673,13 +706,10 @@ class onlineSimulationWithNetwork(object):
         return path_trajectoryT, path_trajectoryR, path_centerline_ratio_list, self.originalCenterlineArray, safe_distance_list
 
 
-    def runVS2(self, args, point_cloud_generator):
+    def runVS2(self, args, point_cloud_generator, centerline_generator):
         # Pitch and Roll    
         count = len(self.centerlineArray) - 1
-        file = open("transformation.txt", "w+")
-
         start_index = len(self.centerlineArray) - 3
-
         x, y, z = self.centerlineArray[start_index]
         yaw = 0
         pitch = 0
@@ -687,7 +717,7 @@ class onlineSimulationWithNetwork(object):
 
         ######################
         # Defining initial camera orientation to be always aligned with the path
-        pos_vector_gt = (self.centerlineArray[count - 1] - self.centerlineArray[count]) / np.linalg.norm(self.centerlineArray[count - 1] - self.centerlineArray[count]) # vetor da direcao ideal do movimento
+        pos_vector_gt = (self.centerlineArray[count - 1] - self.centerlineArray[count]) / np.linalg.norm(self.centerlineArray[count - 1] - self.centerlineArray[count]) # Ideal motion direction
         pos_vector_norm = np.linalg.norm(pos_vector_gt)
 
         pitch = np.arcsin(pos_vector_gt[2] / pos_vector_norm)
@@ -697,12 +727,19 @@ class onlineSimulationWithNetwork(object):
             yaw = np.arccos(pos_vector_gt[1] / np.sqrt(pos_vector_gt[0] ** 2 + pos_vector_gt[1] ** 2))
         ##############################
 
+        print("Initial position:", x, y, z)
+        print("Initial orientation:", pitch, roll, yaw)
+        
+
+        # Build initial transform by converting Euler angles to quaternion to rotation matrix
         quat_init = p.getQuaternionFromEuler([pitch, roll, yaw])
         R = p.getMatrixFromQuaternion(quat_init)
         R = np.reshape(R, (3, 3))
-        t = np.array([x, y, z])  # pode nao estar em cima do path porque foi adicionado aqui um random em torno do mesmo
+        t = np.array([x, y, z])
+        T_current = t.copy()
         pos_vector = self.centerlineArray[count - 1] - self.centerlineArray[count]
 
+        # Debug visualisation of centerline (draws green line segments along entire centerline for refernce)
         for i in range(len(self.centerlineArray) - 1):
             p.addUserDebugLine(self.centerlineArray[i], self.centerlineArray[i + 1], lineColorRGB=[0, 1, 0], lifeTime=0, lineWidth=3)
         
@@ -722,9 +759,14 @@ class onlineSimulationWithNetwork(object):
         args.human = True
         direction = np.array([0, 0, 0]) 
 
+        # Matrix for simulated camera, scaled for resolution.
         intrinsic_matrix = np.array([[236.3918, 0, 237.2150],
                                     [0, 237.3016, 237.2665],
                                     [0, 0, 1]])
+        intrinsic_matrix = np.array([[175 / 1.008, 0, 100],
+                                    [0, 175 / 1.008, 100],
+                                    [0, 0, 1]])
+
 
         target_width = 200
         target_height = 200
@@ -741,34 +783,62 @@ class onlineSimulationWithNetwork(object):
                 [0, 0, 1]
             ])
 
-        #Initialize robot
+        #Intantiate bronchoscope robot controller (BroncoRobot1)
         m_robot = BroncoRobot1()
 
-        # Create a log file for transformation matrices
-        
+        # Opens text files to record every transformation, pose, translation, rotation, and kinematic data
+        log_dir = "./logs"
+        os.makedirs(log_dir, exist_ok=True)
+
+        # Create log files in the log directory
+        transformation_log_file = open(os.path.join(log_dir, "transformation.txt"), "w+")
+        pose_log_file = open(os.path.join(log_dir, "pose.txt"), "w+")
+        translation_log_file = open(os.path.join(log_dir, "translation.txt"), "w+")
+        translation_difference_log_file = open(os.path.join(log_dir, "translation_difference.txt"), "w+")
+        rotation_log_file = open(os.path.join(log_dir, "rotation.txt"), "w+")
+        rotation_log_file_2 = open(os.path.join(log_dir, "rotation_2.txt"), "w+")
+        kinematic_log_file = open(os.path.join(log_dir, "kinematic.txt"), "w+")
+        kinematic_deviation_log_file = open(os.path.join(log_dir, "kinematic_deviation.txt"), "w+")
+        centerline_traversed_log_file = open(os.path.join(log_dir, "centerline_traversed.txt"), "w+")
+        # log joint data
+        joint_log_file = open(os.path.join("./logs", "joint_data.txt"), "w+")
+        # log joint data (forward, backward and bending)
+        joint_log_file_forward = open(os.path.join("./logs", "joint_data_forward.txt"), "w+")
+        joint_log_file_backward = open(os.path.join("./logs", "joint_data_backward.txt"), "w+")
+        collision_log_file = open(os.path.join(log_dir, "collision.txt"), "w+")
+        centerline_traversed_log_file = open(os.path.join(log_dir, "centerline_traversed.txt"), "w+")
+
         frame_count = 0
+
+        accumulated_points = None
+        accumulated_lines = []
+
+        # Initialize the Kinem class before the loop
+        kinem = Kinem(r_cable=2.0, n_links=10)
+        # Instantiate your simulated robot logger
+        initial_robot_position = [0, 0, 0] # Adjust as needed
+        robot_logger = BroncoRobot2(initialPosition=initial_robot_position)
+        logged_joint_values_forward = []
+
 
         while 1:
             tic = time.time()
             p.stepSimulation()
 
-            #0 - Pose atual da camara no mundo
+            #0 - Get current camera pose
             pitch_current = pitch
             yaw_current = yaw
             roll_current = roll
+            # Re-compute quat-current, r-current to build 4x4 matrix combining current rotation (world -> camera) and translation.
             quat_current = p.getQuaternionFromEuler([pitch_current, roll_current, yaw_current])
             R_current = p.getMatrixFromQuaternion(quat_current)
             R_current = np.reshape(R_current, (3, 3))
+            T_previous = T_current.copy()
             T_current = t
 
             quatCam = p.getQuaternionFromEuler([pitch + np.pi / 2, roll, yaw])
             R_currentCam = p.getMatrixFromQuaternion(quatCam)
             R_currentCam = np.reshape(R_currentCam, (3, 3))
-
-            # Construct the transformation matrix
-            transformation_matrix = self.get_transformation_matrix(R_current, T_current)
-            point_cloud_generator.get_transformation_matrix(R_current, T_current)
-
 
             pose = np.identity(4)
             pose[:3, 3] = T_current
@@ -777,35 +847,27 @@ class onlineSimulationWithNetwork(object):
             m_currentJoints = m_robot.getJoints()
 
 
-            # Manual input to the system 
+            # Keyboard control allows manual steering inputs.
             keys = p.getKeyboardEvents()
             direction = getAdditionBO(keys, 1)
             direction = np.array(direction)       
             
-            # Get Images from current pose
-            rgb_img, depth_img, rgb_img_ori, depth_img2 =  self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
+            # Get Images from current pose, print diagnostics
+            pose_img, rgb_img, depth_img, rgb_img_ori, depth_img2, depth_img3 =  self.get_imagesPRY(yaw / np.pi * 180, pitch / np.pi * 180, roll / np.pi * 180, t, pos_vector)
 
             print(f"Depth Image Shape: {depth_img2.shape}")
             print(f"Depth Image Sample: {depth_img2[100, 100]}")  # Check the value at a specific pixel
             print(f"Depth Image Stats: Min={np.min(depth_img2)}, Max={np.max(depth_img2)}, Mean={np.mean(depth_img2)}")
 
-            # Update point cloud and log translations every 100 frames
-            frame_count += 1
-            if frame_count % 50 == 0:
-                if depth_img2 is not None and np.any(depth_img2 > 0):
-                    point_cloud_generator.save_intermediate_pc(depth_img2, os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
-                    point_cloud_generator.update_point_cloud(depth_img2, "translation_log.txt")
-                    print("Transformation Matrix:\n", transformation_matrix)
-                    file.write(f"{transformation_matrix.tolist()}\n")
+            #pose2_dir = "./pose2"
+            #os.makedirs(pose2_dir, exist_ok=True)
+            #np.savetxt(os.path.join(pose2_dir, f"pose_{self.update_count}.txt"), pose_img, fmt="%.6f")
 
-                    # Save intermediate point cloud
-                    #print(f"Saving intermediate point cloud at step {frame_count}")
-                    #point_cloud_generator.save_pc(os.path.join("pointclouds", f"intermediate_point_cloud_{frame_count}.pcd"))
-                    #print(f"Intermediate point cloud saved at step {frame_count}")
-
-                else:
-                    print("Depth image is invalid. Skipping point cloud update and save.")
-
+            #depth2_dir = "./depth2"
+            #os.makedirs(depth2_dir, exist_ok=True)
+            #np.savetxt(os.path.join(depth2_dir, f"depth_{self.update_count}.txt"), depth_img3)  # Save the original depth image
+            
+            self.update_count += 1
 
             # Get the nearest point of the center line to the current one
             nearest_original_centerline_point_sim_cor_index = np.linalg.norm(self.originalCenterlineArray - t, axis=1).argmin()
@@ -821,7 +883,8 @@ class onlineSimulationWithNetwork(object):
                 if not index_form_dis or not index_form_dis2:
                     index_form_dis = len(restSmoothedCenterlineArray) - 1
                     index_form_dis2 = len(restSmoothedCenterlineArray) - 2
-                    
+                
+                # Derive new direction
                 pos_vector_gt = (restSmoothedCenterlineArray[index_form_dis2] - restSmoothedCenterlineArray[index_form_dis]) / np.linalg.norm(restSmoothedCenterlineArray[index_form_dis2] - restSmoothedCenterlineArray[index_form_dis]) # vetor da direcao ideal do movimento
 
             pos_vector_norm = np.linalg.norm(pos_vector_gt)
@@ -829,19 +892,19 @@ class onlineSimulationWithNetwork(object):
                 count -= 1
                 continue
         
-            # A - Proxima posicao camara
-            #OU smooth da atual ate a proxima x 2
+            # A - Next camera position
+            # Get smooth 'next' position along the centerline
             m_nextgtposSmooth = np.mean(restSmoothedCenterlineArray[index_form_dis2-1:index_form_dis], axis=0) 
 
+            # Visual servoing control
             predicted_action_in_camera_cor1 = np.dot(np.linalg.inv(pose), [m_nextgtposSmooth[0],m_nextgtposSmooth[1],m_nextgtposSmooth[2],1])[:-1]
-            predicted_action_in_image_cor1 = np.dot(scaled_intrinsic_matrix, predicted_action_in_camera_cor1) / predicted_action_in_camera_cor1[2]
-
-            # VIsual servoing
+            predicted_action_in_image_cor1 = np.dot(intrinsic_matrix, predicted_action_in_camera_cor1) / predicted_action_in_camera_cor1[2]
+            
             m_jointsVelRel, m_nextvalues = m_robot.visualservoingcontrol(predicted_action_in_image_cor1)
             m_nextvalues[0] = m_nextvalues[0] - direction[2] * 0.005
             
             quat_step = p.getQuaternionFromEuler([m_nextvalues[2] - m_currentJoints[2], m_nextvalues[1] - m_currentJoints[1], 0]) # pitch roll 0
-            t =  t + np.dot(R_currentCam, [0, 0,  -direction[2] * 0.005])  # andar em Z na direcao da camara; OBS: o eixo da camara esta rodado em relacao ao mundo
+            t =  t + np.dot(R_currentCam, [0, 0,  -direction[2] * 0.005])  # Move forward/backward along camera's local Z-axis by small step.
 
             R_step = p.getMatrixFromQuaternion(quat_step)
             R_step = np.reshape(R_step, (3, 3))
@@ -849,8 +912,124 @@ class onlineSimulationWithNetwork(object):
             quat_current = dcm2quat(np.dot(R_current,R_step))
             [pitch, roll, yaw] = p.getEulerFromQuaternion(quat_current) # Euler angles given as XYZ (pitch;roll;yaw)
 
+            # Collision control
+            closest_point_id = self.pointLocator.FindClosestPoint(t)
+            closest_point = np.array(self.vtkdata.GetPoint(closest_point_id))
+            distance_to_wall = np.linalg.norm(t - closest_point)
+            collision_log_file.write(f"Frame {frame_count} - Closest point: {closest_point}, Distance to wall: {distance_to_wall}\n")
+            
+            # Check for collision with the airway wall
+            collision_threshold = 0.005  # 5 mm, adjust as needed
+            if distance_to_wall < collision_threshold:
+                print(f"Collision detected! Distance to wall: {distance_to_wall:.4f} m")
+                collision_log_file.write(f"Collision detected at index {frame_count} with distance {distance_to_wall:.4f} m\n")
+
+            # Log how far the robot has traveled
+            start_index = len(self.originalCenterlineArray) - 1  # if you start at the end
+            current_index = nearest_original_centerline_point_sim_cor_index
+
+            if current_index < start_index:
+                traversed_length = np.sum(
+                    np.linalg.norm(
+                        np.diff(self.originalCenterlineArray[current_index:start_index + 1], axis=0),
+                        axis=1
+                    )
+                )
+            else:
+                traversed_length = 0  # not moved yet
+
+            percent_traversed = traversed_length / self.centerline_length * 100
+            centerline_traversed_log_file.write(
+                f"Frame {frame_count} - Traversed centerline length: {traversed_length:.4f} ({percent_traversed:.2f}%)\n"
+            )
+
+            if path_trajectoryT is not None:
+
+                # Step 6: Save the accumulated centerline after processing every 10 frames
+                 # Only run IK and log joints every N frames and if enough points are available
+                if len(path_trajectoryT) > 1:
+                    poses, thetas, phis, ds = kinem.inverse_kinematics_path(np.array(path_trajectoryT))
+                    # Find the nearest index on the trajectory to the current position
+                    current_camera_index = np.linalg.norm(np.array(path_trajectoryT) - t, axis=1).argmin()
+                    if ds is not None and len(ds) > current_camera_index:
+                        desired_robot_joints = [
+                            ds[current_camera_index],
+                            phis[current_camera_index],
+                            thetas[current_camera_index]
+                                ]
+                        joint_log_file_forward.write(f"Frame {frame_count} - Joint Data Forward: {desired_robot_joints}\n")
+                        robot_logger.setJoints(desired_robot_joints)
+                        current_robot_joints = robot_logger.getJoints()
+                        joint_values = robot_logger.positionservoingcontrol(poses[current_camera_index])
+                        joint_log_file.write(f"Frame {frame_count} - Joint Data: {joint_values}\n")
+                else:
+                    print("Warning: Invalid index for desired robot joints logging.")
+
+            
+            ####Construction of point cloud
+
+            #construct the translation matrix
+            translation_difference = t-T_current #Calculate translation difference
+        
+            # Construct the transformation matrix
+            transformation_matrix = self.get_transformation_matrix(R_currentCam, T_current)  # Use translation difference
+
+           # Update point cloud every x frames
+
+            frame_count += 1
+            if frame_count % 20 == 0:
+                if depth_img2 is not None and np.any(depth_img2 > 0):
+                    # Step 1: Process depth and pose
+                    point_cloud_generator.process_depth_and_transform(depth_img2, pose_img)
+
+                    # Step 2: Log transformation and pose
+                    transformation_log_file.write(np.array_str(transformation_matrix) + "\n")
+                    pose_log_file.write(np.array_str(pose_img) + "\n")
+
+                    # Step 3: Save intermediate and aligned point cloud
+                    temp_pcd = point_cloud_generator.save_intermediate_pointcloud(
+                        depth_img2, transformation_matrix, f"intermediate_point_cloud_{frame_count}"
+                    )
+                    #if temp_pcd is not None:
+                    #    print(f"Frame {frame_count}: temp_pcd has {len(temp_pcd.points)} points.")
+
+                    #    aligned_filename = f"aligned_point_cloud_{frame_count}.ply"
+                    #    output_folder = os.path.join("pointclouds", "aligned_pointclouds")
+                    #    os.makedirs(output_folder, exist_ok=True)
+                    #    aligned_file_path = os.path.join(output_folder, aligned_filename)
+                    #    o3d.io.write_point_cloud(aligned_file_path, temp_pcd)
+
+                    # Step 4: Compute centerline using CenterlineGenerator with the pcd
+                    #print(f"Computing and saving centerline for frame {frame_count}...")
+                    #centerline = centerline_generator.extract_centerline_from_pcd(temp_pcd)
+                    #if centerline is not None:
+                    #    centerline_generator.save_centerline(centerline, f"simulated_centerline_{frame_count}.npy")
+                    #    print(f"Frame {frame_count}: Centerline saved with shape {centerline.shape}")
+                    #else:
+                    #    print(f"Frame {frame_count}: Centerline extraction failed.")
+
+
+
+                else:
+                    print(f"Depth image is invalid at frame {frame_count}. Skipping point cloud update and save.")
+
+
+
+            # Only save at certain intervals
+            if frame_count % 20 == 0:  # Adjust 
+            #    print(f"Saving intermediate point cloud at step {frame_count}")
+                point_cloud_generator.save_intermediate_pointcloud(depth_img2, transformation_matrix, f"intermediate_point_cloud_{frame_count}")
+            #    print(f"Intermediate point cloud saved at step {frame_count}")
+            #    
+            #    print(f"Saving accumulated point cloud at frame {frame_count}")
+                point_cloud_generator.save_accumulated_point_cloud(filename=f"accumulated_point_cloud_frame_{frame_count}.npy")
+            #    print(f"Accumulated point cloud saved at frame {frame_count}")
+            
+            #else:
+            #    print("Depth image is invalid. Skipping point cloud update and save.")
+
             ########
-            # Caluculate path length
+            # Path length and trajectory recording
             path_length_diff = np.linalg.norm(t-T_current)
             path_length += path_length_diff 
             
@@ -883,8 +1062,14 @@ class onlineSimulationWithNetwork(object):
         print(f"Total points in point cloud before saving: {len(point_cloud_generator.pcd.points)}")
         if len(point_cloud_generator.pcd.points) > 0:
             print("Saving final point cloud...")
-            point_cloud_generator.save_pc(os.path.join("pointclouds", "final_point_cloud.pcd"))
+            point_cloud_generator.save_accumulated_point_cloud(os.path.join("pointclouds", "final_point_cloud.ply")) # Changed extension to .ply
             print("Final point cloud saved.")
+            print("Saving final centerline cloud...")
+            point_cloud_generator.save_centerline_with_lines(
+            self.accumulated_points, self.accumulated_lines, "final_accumulated_centerline.ply"
+            )
+            print("Final centerline cloud saved.")
+
         else:
             print("Point cloud is empty. Nothing to save.")
         
@@ -892,4 +1077,3 @@ class onlineSimulationWithNetwork(object):
         self.r.delete()
 
         return path_trajectoryT, path_trajectoryR, path_centerline_ratio_list, self.originalCenterlineArray, safe_distance_list, path_jointvel, path_joint
-

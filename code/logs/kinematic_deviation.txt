@@ -1,0 +1,9 @@
+Frame 5 - Translation deviation (x, y, z): [-0.04833893  0.06823317 10.43233398]
+Frame 5 - Absolute translation deviation (x, y, z): [ 0.04833893  0.06823317 10.43233398]
+Frame 5 - Rotation Difference (Euler angles): [-52.82296257  78.14144929  53.15971244] (magnitude: 108.27°)
+Frame 10 - Translation deviation (x, y, z): [-0.03667205  0.06738972 10.42718753]
+Frame 10 - Absolute translation deviation (x, y, z): [ 0.03667205  0.06738972 10.42718753]
+Frame 10 - Rotation Difference (Euler angles): [-53.52131636  78.04639746  53.51785119] (magnitude: 108.72°)
+Frame 15 - Translation deviation (x, y, z): [-0.04180069  0.06986826 10.4250509 ]
+Frame 15 - Absolute translation deviation (x, y, z): [ 0.04180069  0.06986826 10.4250509 ]
+Frame 15 - Rotation Difference (Euler angles): [-53.30179168  74.50253526  53.64820579] (magnitude: 106.16°)

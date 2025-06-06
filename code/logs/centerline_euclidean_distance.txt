@@ -1,0 +1,8 @@
+Frame 5 - Mean Euclidean Distance: 10.477380 m
+Frame 5 - Max Euclidean Distance: 10.510592 m
+Frame 10 - Mean Euclidean Distance: 10.473867 m
+Frame 10 - Max Euclidean Distance: 10.506871 m
+Frame 15 - Mean Euclidean Distance: 10.470196 m
+Frame 15 - Max Euclidean Distance: 10.500609 m
+Frame 20 - Mean Euclidean Distance: 10.468713 m
+Frame 20 - Max Euclidean Distance: 10.493623 m

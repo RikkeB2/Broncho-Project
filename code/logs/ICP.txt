@@ -1,0 +1,4 @@
+Starting new ICP log set
+ICP Fitness: 1.0, Inlier RMSE: 0.0010023630600952415
+ICP Fitness: 1.0, Inlier RMSE: 0.0009989687313259304
+ICP Fitness: 1.0, Inlier RMSE: 0.000996408881900581

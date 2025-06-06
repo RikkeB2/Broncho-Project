@@ -1,0 +1,170 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/27.0.9 Chrome/134.0.6998.205 Electron/35.4.0 Safari/537.36" version="27.0.9">
+  <diagram name="Side-1" id="UyaYXbJCaEVXkR74-4xI">
+    <mxGraphModel dx="1892" dy="1324" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-62" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-1" target="UtGt6KNxSAprVNSM-Ta2-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-1" value="Start" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_1;whiteSpace=wrap;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="20" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-2" target="UtGt6KNxSAprVNSM-Ta2-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-2" value="Depth&lt;div&gt;Image&lt;/div&gt;" style="shape=parallelogram;html=1;strokeWidth=2;perimeter=parallelogramPerimeter;whiteSpace=wrap;rounded=1;arcSize=12;size=0.23;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="240.00000000000006" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-3" target="UtGt6KNxSAprVNSM-Ta2-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-3" value="Pointcloud&lt;div&gt;Generator&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="760" y="350.0000000000001" width="80" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-4" target="UtGt6KNxSAprVNSM-Ta2-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-4" value="Pointcloud" style="shape=parallelogram;html=1;strokeWidth=2;perimeter=parallelogramPerimeter;whiteSpace=wrap;rounded=1;arcSize=12;size=0.23;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="470.0000000000001" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-5" target="UtGt6KNxSAprVNSM-Ta2-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-5" value="Centreline&lt;br&gt;Generator" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;strokeColor=#000000;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="760" y="580.0000000000001" width="80" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-7" target="UtGt6KNxSAprVNSM-Ta2-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-7" value="Centreline" style="shape=parallelogram;html=1;strokeWidth=2;perimeter=parallelogramPerimeter;whiteSpace=wrap;rounded=1;arcSize=12;size=0.23;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="700.0000000000001" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-8" target="UtGt6KNxSAprVNSM-Ta2-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-8" value="Kinematic" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="760" y="810.0000000000001" width="80" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-9" target="UtGt6KNxSAprVNSM-Ta2-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-9" value="Desired&lt;br&gt;joint values" style="shape=parallelogram;html=1;strokeWidth=2;perimeter=parallelogramPerimeter;whiteSpace=wrap;rounded=1;arcSize=12;size=0.23;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="930" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-10" value="Forward&lt;br&gt;movement" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;strokeColor=#000000;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="760" y="1040" width="80" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-11" target="UtGt6KNxSAprVNSM-Ta2-10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="860" y="1210" />
+              <mxPoint x="860" y="1020" />
+              <mxPoint x="800" y="1020" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-40" value="if f_c &amp;lt; 5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="UtGt6KNxSAprVNSM-Ta2-39">
+          <mxGeometry x="0.0977" y="-1" relative="1" as="geometry">
+            <mxPoint y="63" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-11" target="UtGt6KNxSAprVNSM-Ta2-25">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="1210" />
+              <mxPoint x="720" y="155" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-43" value="if f_c &amp;gt; 5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="UtGt6KNxSAprVNSM-Ta2-41">
+          <mxGeometry x="-0.8047" y="-2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-11" value="frame_count" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="1160" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-25" target="UtGt6KNxSAprVNSM-Ta2-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-25" value="Camera" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;fillColor=#D4E1F5;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="760" y="120" width="80" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-51" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-29" target="UtGt6KNxSAprVNSM-Ta2-49">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-52" value="yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="UtGt6KNxSAprVNSM-Ta2-51">
+          <mxGeometry x="-0.1308" y="-1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-29" value="More&amp;nbsp;&lt;div&gt;unvisited&amp;nbsp;&lt;/div&gt;&lt;div&gt;branches&lt;/div&gt;" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.decision;whiteSpace=wrap;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="1420" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-10" target="UtGt6KNxSAprVNSM-Ta2-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-44" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-11" target="UtGt6KNxSAprVNSM-Ta2-63">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="800" y="1300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-63" target="UtGt6KNxSAprVNSM-Ta2-29">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="800" y="1380" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-60" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-49" target="UtGt6KNxSAprVNSM-Ta2-55">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-49" value="Backwards movement" style="shape=parallelogram;html=1;strokeWidth=2;perimeter=parallelogramPerimeter;whiteSpace=wrap;rounded=1;arcSize=12;size=0.23;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="610" y="1440" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-50" value="End" style="strokeWidth=2;html=1;shape=mxgraph.flowchart.start_1;whiteSpace=wrap;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="1770" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-29" target="UtGt6KNxSAprVNSM-Ta2-56">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="870" y="1450" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="800" y="1550" />
+              <mxPoint x="800" y="1550" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-54" value="no" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="UtGt6KNxSAprVNSM-Ta2-53">
+          <mxGeometry x="-0.2143" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-61" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-55" target="UtGt6KNxSAprVNSM-Ta2-25">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="720" y="160" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="660" y="155" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-55" value="Reached&amp;nbsp;&lt;div&gt;start of centreline&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="620" y="1310" width="80" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-56" target="UtGt6KNxSAprVNSM-Ta2-57">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-56" value="Backwards movement" style="shape=parallelogram;html=1;strokeWidth=2;perimeter=parallelogramPerimeter;whiteSpace=wrap;rounded=1;arcSize=12;size=0.23;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="1560" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-57" value="Reached&amp;nbsp;&lt;div&gt;start of centreline&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;absoluteArcSize=1;arcSize=14;strokeWidth=2;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="760" y="1660" width="80" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-59" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="UtGt6KNxSAprVNSM-Ta2-57" target="UtGt6KNxSAprVNSM-Ta2-50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="UtGt6KNxSAprVNSM-Ta2-63" value="Reached&amp;nbsp;&lt;div&gt;end&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;of&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;centreline&lt;/span&gt;&lt;/div&gt;" style="shape=parallelogram;html=1;strokeWidth=2;perimeter=parallelogramPerimeter;whiteSpace=wrap;rounded=1;arcSize=12;size=0.23;fillColor=#D4E1F5;" vertex="1" parent="1">
+          <mxGeometry x="750" y="1310" width="100" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

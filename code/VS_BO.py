@@ -9,11 +9,6 @@ from lib.engine.onlineSimulationBO import onlineSimulationWithNetwork as onlineS
 from scipy.io import savemat
 np.random.seed(0)
 
-# --------------------------------------------------------------------------------
-# This code runs a simulation of the SCNet with the online simulator
-# The online simulator is a simplified version of the real simulator
-# --------------------------------------------------------------------------------
-
 def get_args():
     parser = argparse.ArgumentParser(description='Train the SCNet on images and target landmarks',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)

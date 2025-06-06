@@ -461,9 +461,6 @@ class onlineSimulationWithNetwork(object):
         self.centerlineArray = centerlineArray_smoothed
         self.originalCenterlineArray = centerlineArray
     
-
-
-    
     def runVS2(self, args, point_cloud_generator, centerline_generator):
 
         #Inverse the centerline array to match the simulation
@@ -496,7 +493,7 @@ class onlineSimulationWithNetwork(object):
         roll = 0
 
         ######################
-        # Defining initial camera orientation to be always aligned with the path
+        # Defining initial camera orientation to always aligned with the path
         pos_vector_gt = (self.centerlineArray[count - 1] - self.centerlineArray[count]) / np.linalg.norm(self.centerlineArray[count - 1] - self.centerlineArray[count]) # Ideal motion direction
         pos_vector_norm = np.linalg.norm(pos_vector_gt)
 
@@ -619,7 +616,6 @@ class onlineSimulationWithNetwork(object):
 
         last_valid_orientation = (0.0, 0.0, 0.0)
 
-        # At the top of your runVS2, before the loop:
         euclidean_distances = []
 
 

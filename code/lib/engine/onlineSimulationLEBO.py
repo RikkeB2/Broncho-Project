@@ -205,7 +205,6 @@ class onlineSimulationWithNetwork(object):
 
         self.update_count = 0
 
-
     def indexFromDistance(self, centerlineArray, count, distance):
         centerline_size = len(centerlineArray)
         start_index = count
@@ -813,7 +812,6 @@ class onlineSimulationWithNetwork(object):
 
                             print(f"Updated centerline and matched robot position at index {new_current_centerline_index}.")
                             # Calculate the difference between the current ds and the new ds_cl at the matched index
-                            # Maintain last_ds across frames (initialize it e.g., in __init__ or earlier)
                             if not hasattr(self, "last_ds"):
                                 self.last_ds = ds[current_centerline_index]
 
